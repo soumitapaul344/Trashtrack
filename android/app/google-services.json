@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "657599895308",
+    "project_id": "trashtrack-a438d",
+    "storage_bucket": "trashtrack-a438d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:657599895308:android:e15824ce0ef8d270349b29",
+        "android_client_info": {
+          "package_name": "com.example.trashtrack"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAGON-8BOS6kcarEc5YZfCzL9McGNxVSS4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

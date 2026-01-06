@@ -1,0 +1,215 @@
+import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../services/auth_service.dart';
+
+import 'homes/citizen_home.dart';
+import 'homes/rider_home.dart';
+import 'homes/cleaner_home.dart';
+import 'homes/admin_home.dart';
+import 'signup_page.dart';
+
+class LoginPage extends StatefulWidget {
+  const LoginPage({super.key});
+
+  @override
+  State<LoginPage> createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+  final auth = AuthService();
+
+  bool _isLoading = false;
+  bool _obscurePassword = true;
+
+  void showMsg(String message, {bool isError = true}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? Colors.redAccent : Colors.green,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  Future<void> login() async {
+    if (emailController.text.isEmpty || passwordController.text.isEmpty) {
+      showMsg("Please fill in all fields");
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: emailController.text.trim(),
+        password: passwordController.text.trim(),
+      );
+
+      final role = await auth.getRole();
+      if (role == null) {
+        showMsg("User record not found in database.");
+        return;
+      }
+
+      Widget nextHome;
+
+      if (role == "citizen") {
+        nextHome = const CitizenHomePage();
+      } else if (role == "rider") {
+        nextHome = const RiderHome();
+      } else if (role == "cleaner") {
+        nextHome = const CleanerHome();
+      } else if (role == "admin") {
+        nextHome = const AdminHome();
+      } else {
+        showMsg("User role not recognized.");
+        return;
+      }
+
+      if (!mounted) return;
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => nextHome),
+      );
+
+      showMsg("Login Successful!", isError: false);
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'user-not-found') {
+        showMsg("No user found.");
+      } else if (e.code == 'wrong-password') {
+        showMsg("Wrong password.");
+      } else {
+        showMsg(e.message ?? "Login error");
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFF4F9F9),
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 25),
+          child: Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF76A342),
+                  borderRadius: BorderRadius.circular(25),
+                ),
+                child: const Icon(Icons.eco, size: 50, color: Colors.white),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                "TrashTrack",
+                style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+              ),
+              const Text(
+                "Eco-friendly waste management.",
+                style: TextStyle(color: Colors.blueGrey),
+              ),
+              const SizedBox(height: 50),
+
+              customField(
+                "Email Address",
+                emailController,
+                Icons.email_outlined,
+              ),
+              const SizedBox(height: 15),
+              customField(
+                "Password",
+                passwordController,
+                Icons.lock_outline,
+                isPassword: true,
+              ),
+              const SizedBox(height: 30),
+
+              SizedBox(
+                width: double.infinity,
+                height: 55,
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : login,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF138D75),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                  ),
+                  child: _isLoading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text(
+                          "Log In",
+                          style: TextStyle(color: Colors.white),
+                        ),
+                ),
+              ),
+
+              const SizedBox(height: 30),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text("Don't have an account? "),
+                  GestureDetector(
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const SignUpPage()),
+                    ),
+                    child: const Text(
+                      "Sign Up",
+                      style: TextStyle(
+                        color: Color(0xFF138D75),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget customField(
+    String hint,
+    TextEditingController c,
+    IconData icon, {
+    bool isPassword = false,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: TextField(
+        controller: c,
+        obscureText: isPassword ? _obscurePassword : false,
+        decoration: InputDecoration(
+          hintText: hint,
+          prefixIcon: Icon(icon),
+          suffixIcon: isPassword
+              ? IconButton(
+                  icon: Icon(
+                    _obscurePassword
+                        ? Icons.visibility_outlined
+                        : Icons.visibility_off_outlined,
+                  ),
+                  onPressed: () =>
+                      setState(() => _obscurePassword = !_obscurePassword),
+                )
+              : null,
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.all(18),
+        ),
+      ),
+    );
+  }
+}
