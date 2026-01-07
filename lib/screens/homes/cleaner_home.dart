@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+// ignore_for_file: use_build_context_synchronously
+
 class CleanerHome extends StatelessWidget {
   const CleanerHome({super.key});
 
@@ -18,7 +20,7 @@ class CleanerHome extends StatelessWidget {
               Navigator.pushReplacementNamed(
                 context,
                 '/login',
-              ); // Adjust based on your routes
+              );
             },
           ),
         ],

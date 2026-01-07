@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import 'homes/citizen_home.dart';
 
+// ignore_for_file: use_build_context_synchronously
+
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
 

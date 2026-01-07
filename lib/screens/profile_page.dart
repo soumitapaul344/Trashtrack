@@ -4,6 +4,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/auth_service.dart';
 import 'login_page.dart'; // Replace with your actual login page
 
+// ignore_for_file: use_build_context_synchronously
+
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
 
@@ -147,7 +149,7 @@ class ProfilePage extends StatelessWidget {
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.redAccent.withOpacity(0.1),
+                        backgroundColor: Colors.redAccent.withValues(alpha: 0.1),
                         foregroundColor: Colors.redAccent,
                         elevation: 0,
                         shape: RoundedRectangleBorder(
