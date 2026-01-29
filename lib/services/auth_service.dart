@@ -5,7 +5,9 @@ class AuthService {
   final _auth = FirebaseAuth.instance;
   final _db = FirebaseFirestore.instance;
 
-  // Signup citizen account with full fields
+  // ---------------------------
+  // Signup citizen account
+  // ---------------------------
   Future<void> signUp({
     required String name,
     required String email,
@@ -16,14 +18,22 @@ class AuthService {
     required String contact,
     required String role,
   }) async {
+    // 1️⃣ Create Firebase user
     final userCredential = await _auth.createUserWithEmailAndPassword(
       email: email,
       password: password,
     );
 
-    // Store all fields in Firestore
-    await _db.collection("users").doc(userCredential.user!.uid).set({
-      "uid": userCredential.user!.uid,
+    final user = userCredential.user;
+
+    if (user == null) throw Exception("User creation failed");
+
+    // 2️⃣ Send verification email
+    await user.sendEmailVerification();
+
+    // 3️⃣ Save all fields in Firestore
+    await _db.collection("users").doc(user.uid).set({
+      "uid": user.uid,
       "name": name,
       "email": email,
       "house": house,
@@ -35,21 +45,57 @@ class AuthService {
     });
   }
 
+  // ---------------------------
   // Login returns current user
+  // ---------------------------
   Future<User?> login(String email, String password) async {
     final credential = await _auth.signInWithEmailAndPassword(
       email: email,
       password: password,
     );
-    return credential.user;
+
+    final user = credential.user;
+
+    // ✅ Check if email is verified
+    if (user != null && !user.emailVerified) {
+      throw FirebaseAuthException(
+        code: "email-not-verified",
+        message: "Please verify your email before login",
+      );
+    }
+
+    return user;
   }
 
+  // ---------------------------
   // Logout
+  // ---------------------------
   Future<void> logout() async {
     await _auth.signOut();
   }
 
+  // ---------------------------
+  // Resend verification email
+  // ---------------------------
+  Future<void> resendVerificationEmail() async {
+    final user = _auth.currentUser;
+    if (user == null) throw FirebaseAuthException(code: 'no-current-user', message: 'No signed in user');
+    await user.sendEmailVerification();
+  }
+
+  // ---------------------------
+  // Check current user's email verification status (reloads user)
+  // ---------------------------
+  Future<bool> isEmailVerified() async {
+    final user = _auth.currentUser;
+    if (user == null) return false;
+    await user.reload();
+    return _auth.currentUser?.emailVerified ?? false;
+  }
+
+  // ---------------------------
   // Get role of current user
+  // ---------------------------
   Future<String?> getRole() async {
     final user = _auth.currentUser;
     if (user == null) return null;
@@ -61,7 +107,9 @@ class AuthService {
     return data?['role'] as String?;
   }
 
-  // Optional: create staff account (Rider or Cleaner)
+  // ---------------------------
+  // Create staff account (Rider or Cleaner)
+  // ---------------------------
   Future<void> createStaffAccount({
     required String name,
     required String email,
@@ -77,8 +125,11 @@ class AuthService {
       password: password,
     );
 
-    await _db.collection('users').doc(res.user!.uid).set({
-      "uid": res.user!.uid,
+    final user = res.user;
+    if (user == null) throw Exception("Staff creation failed");
+
+    await _db.collection('users').doc(user.uid).set({
+      "uid": user.uid,
       "name": name,
       "email": email,
       "house": house,
