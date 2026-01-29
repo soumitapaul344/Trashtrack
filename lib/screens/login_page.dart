@@ -7,6 +7,7 @@ import 'homes/rider_home.dart';
 import 'homes/cleaner_home.dart';
 import 'homes/admin_home.dart';
 import 'signup_page.dart';
+import 'verify_email_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -42,17 +43,34 @@ class _LoginPageState extends State<LoginPage> {
     setState(() => _isLoading = true);
 
     try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
+      // 1️⃣ Sign in
+      final credential = await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: emailController.text.trim(),
         password: passwordController.text.trim(),
       );
 
+      final user = credential.user;
+      if (user == null) throw Exception("Login failed");
+
+      // 2️⃣ Check email verification
+      await user.reload();
+      if (!user.emailVerified) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const VerifyEmailPage()),
+        );
+        showMsg("Please verify your email first");
+        return;
+      }
+
+      // 3️⃣ Get role from Firestore
       final role = await auth.getRole();
       if (role == null) {
         showMsg("User record not found in database.");
         return;
       }
 
+      // 4️⃣ Navigate to correct home page
       Widget nextHome;
 
       if (role == "citizen") {
@@ -81,6 +99,14 @@ class _LoginPageState extends State<LoginPage> {
         showMsg("No user found.");
       } else if (e.code == 'wrong-password') {
         showMsg("Wrong password.");
+      } else if (e.code == 'email-not-verified') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const VerifyEmailPage()),
+        );
+        showMsg("Please verify your email first");
+      } else if (e.code == 'pending-approval') {
+        showMsg("Your account is pending admin approval. Please check back later.");
       } else {
         showMsg(e.message ?? "Login error");
       }
@@ -101,10 +127,14 @@ class _LoginPageState extends State<LoginPage> {
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color:  Colors.white,
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(25),
                 ),
-                child: const Icon(Icons.recycling, size: 42, color: Color(0xFF1AAE9F)),
+                child: const Icon(
+                  Icons.recycling,
+                  size: 42,
+                  color: Color(0xFF1AAE9F),
+                ),
               ),
               const SizedBox(height: 20),
               const Text(
@@ -116,12 +146,7 @@ class _LoginPageState extends State<LoginPage> {
                 style: TextStyle(color: Colors.blueGrey),
               ),
               const SizedBox(height: 50),
-
-              customField(
-                "Email Address",
-                emailController,
-                Icons.email_outlined,
-              ),
+              customField("Email Address", emailController, Icons.email_outlined),
               const SizedBox(height: 15),
               customField(
                 "Password",
@@ -130,7 +155,6 @@ class _LoginPageState extends State<LoginPage> {
                 isPassword: true,
               ),
               const SizedBox(height: 30),
-
               SizedBox(
                 width: double.infinity,
                 height: 55,
@@ -150,7 +174,6 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                 ),
               ),
-
               const SizedBox(height: 30),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,

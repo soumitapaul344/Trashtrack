@@ -1,18 +1,14 @@
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 
-// ignore_for_file: use_build_context_synchronously
-
-class SignUpPage extends StatefulWidget {
-  const SignUpPage({super.key});
+class CitizenSignupPage extends StatefulWidget {
+  const CitizenSignupPage({super.key});
 
   @override
-  State<SignUpPage> createState() => _SignUpPageState();
+  State<CitizenSignupPage> createState() => _CitizenSignupPageState();
 }
 
-class _SignUpPageState extends State<SignUpPage> {
-  String selectedRole = "citizen";
-  final List<String> roles = ["Citizen", "Rider", "Cleaner"];
+class _CitizenSignupPageState extends State<CitizenSignupPage> {
   bool _isLoading = false;
 
   final nameController = TextEditingController();
@@ -45,13 +41,6 @@ class _SignUpPageState extends State<SignUpPage> {
       return;
     }
 
-    if (selectedRole != "citizen") {
-      showSnackBar(
-        "Rider and Cleaner accounts can only be created by the Administrator.",
-      );
-      return;
-    }
-
     setState(() => _isLoading = true);
 
     try {
@@ -71,7 +60,7 @@ class _SignUpPageState extends State<SignUpPage> {
         isError: false,
       );
 
-      Navigator.pop(context); // 🔥 back to login page
+      Navigator.pop(context);
     } catch (e) {
       showSnackBar(e.toString());
     } finally {
@@ -90,41 +79,46 @@ class _SignUpPageState extends State<SignUpPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              "Create Account",
-              style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+              "Register as Citizen",
+              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 25),
-
-            signupField("Full Name", nameController, Icons.person_outlined),
+            _signupField("Full Name", nameController, Icons.person_outlined),
             const SizedBox(height: 15),
-            signupField("Email", emailController, Icons.email_outlined),
+            _signupField("Email", emailController, Icons.email_outlined),
             const SizedBox(height: 15),
-            signupField(
+            _signupField(
               "Password",
               passwordController,
               Icons.lock_outline,
               isPass: true,
             ),
-
             const SizedBox(height: 25),
-            signupField("House No.", houseController, Icons.home_outlined),
+            _signupField("House No.", houseController, Icons.home_outlined),
             const SizedBox(height: 15),
-            signupField("Road (Optional)", roadController, Icons.add_road_outlined),
+            _signupField("Road (Optional)", roadController, Icons.add_road_outlined),
             const SizedBox(height: 15),
-            signupField("Block / Sector", blockController, Icons.grid_view),
+            _signupField("Block / Sector", blockController, Icons.grid_view),
             const SizedBox(height: 15),
-            signupField("Contact Number", contactController, Icons.phone),
-
+            _signupField("Contact Number", contactController, Icons.phone),
             const SizedBox(height: 35),
-
             SizedBox(
               width: double.infinity,
               height: 55,
               child: ElevatedButton(
                 onPressed: _isLoading ? null : register,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF138D75),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
                 child: _isLoading
                     ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text("Register"),
+                    : const Text(
+                        "Register",
+                        style: TextStyle(color: Colors.white, fontSize: 16),
+                      ),
               ),
             ),
           ],
@@ -133,7 +127,7 @@ class _SignUpPageState extends State<SignUpPage> {
     );
   }
 
-  Widget signupField(
+  Widget _signupField(
     String hint,
     TextEditingController c,
     IconData icon, {

@@ -32,6 +32,7 @@ class AuthService {
     await user.sendEmailVerification();
 
     // 3️⃣ Save all fields in Firestore
+    bool isApproved = role == "citizen"; // Citizens auto-approved, staff needs admin approval
     await _db.collection("users").doc(user.uid).set({
       "uid": user.uid,
       "name": name,
@@ -41,6 +42,7 @@ class AuthService {
       "block": block,
       "contact": contact,
       "role": role,
+      "isApproved": isApproved,
       "createdAt": FieldValue.serverTimestamp(),
     });
   }
@@ -62,6 +64,21 @@ class AuthService {
         code: "email-not-verified",
         message: "Please verify your email before login",
       );
+    }
+
+    // ✅ Check if approved (for riders/cleaners)
+    if (user != null) {
+      final doc = await _db.collection('users').doc(user.uid).get();
+      if (doc.exists) {
+        final isApproved = doc.get('isApproved') as bool? ?? false;
+        final role = doc.get('role') as String? ?? '';
+        if (!isApproved && (role == 'rider' || role == 'cleaner')) {
+          throw FirebaseAuthException(
+            code: "pending-approval",
+            message: "Your account is pending admin approval",
+          );
+        }
+      }
     }
 
     return user;
@@ -128,6 +145,9 @@ class AuthService {
     final user = res.user;
     if (user == null) throw Exception("Staff creation failed");
 
+    // Send verification email to the newly created staff
+    await user.sendEmailVerification();
+
     await _db.collection('users').doc(user.uid).set({
       "uid": user.uid,
       "name": name,
@@ -137,8 +157,56 @@ class AuthService {
       "block": block,
       "contact": contact,
       "role": role,
+      "isApproved": false, // Starts unapproved, admin must approve
       "createdAt": FieldValue.serverTimestamp(),
       "status": "active",
     });
+  }
+
+  // ---------------------------
+  // Get pending staff (riders & cleaners waiting for approval)
+  // ---------------------------
+  Future<List<Map<String, dynamic>>> getPendingStaff() async {
+    final snapshot = await _db
+        .collection('users')
+        .where('isApproved', isEqualTo: false)
+        .where('role', whereIn: ['rider', 'cleaner'])
+        .orderBy('createdAt', descending: true)
+        .get();
+
+    return snapshot.docs.map((doc) => doc.data()).toList();
+  }
+
+  // ---------------------------
+  // Approve staff (by admin)
+  // ---------------------------
+  Future<void> approveStaff(String uid) async {
+    await _db.collection('users').doc(uid).update({
+      'isApproved': true,
+    });
+  }
+
+  // ---------------------------
+  // Reject/Delete staff (by admin)
+  // ---------------------------
+  Future<void> rejectStaff(String uid) async {
+    try {
+      // Delete from Firestore
+      await _db.collection('users').doc(uid).delete();
+    } catch (e) {
+      throw Exception("Failed to reject staff: $e");
+    }
+  }
+
+  // ---------------------------
+  // Get all users (for admin dashboard)
+  // ---------------------------
+  Future<List<Map<String, dynamic>>> getAllUsers() async {
+    final snapshot = await _db
+        .collection('users')
+        .orderBy('createdAt', descending: true)
+        .get();
+
+    return snapshot.docs.map((doc) => doc.data()).toList();
   }
 }
