@@ -50,7 +50,7 @@ class SignupSelectionPage extends StatelessWidget {
               // Citizen Signup
               _signupButton(
                 context,
-                " Register as Citizen",
+                "👤 Register as Citizen",
                 const Color(0xFF138D75),
                 () => Navigator.push(
                   context,
@@ -59,10 +59,10 @@ class SignupSelectionPage extends StatelessWidget {
               ),
               const SizedBox(height: 15),
 
-              // Rider Signup
+              // Rider Signup (same green color)
               _signupButton(
                 context,
-                " Register as Rider",
+                "🏍️ Register as Rider",
                 const Color(0xFF138D75),
                 () => Navigator.push(
                   context,
@@ -71,10 +71,10 @@ class SignupSelectionPage extends StatelessWidget {
               ),
               const SizedBox(height: 15),
 
-              // Cleaner Signup
+              // Cleaner Signup (same green color)
               _signupButton(
                 context,
-                " Register as Cleaner",
+                "🧹 Register as Cleaner",
                 const Color(0xFF138D75),
                 () => Navigator.push(
                   context,
