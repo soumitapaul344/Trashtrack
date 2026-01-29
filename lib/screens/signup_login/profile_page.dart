@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../services/auth_service.dart';
-import 'login_page.dart'; // Replace with your actual login page
+import 'package:trashtrack/services/auth_service.dart';
+import 'package:trashtrack/screens/signup_login/login_page.dart';
 
 // ignore_for_file: use_build_context_synchronously
 

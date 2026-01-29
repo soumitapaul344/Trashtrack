@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../services/auth_service.dart';
+import 'package:trashtrack/services/auth_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class AdminHome extends StatefulWidget {
@@ -253,9 +253,9 @@ class _AdminHomeState extends State<AdminHome> with SingleTickerProviderStateMix
             if (role == 'citizen') {
               roleColor = const Color(0xFF138D75);
             } else if (role == 'rider') {
-              roleColor = Colors.orange;
+              roleColor = const Color(0xFF138D75);
             } else if (role == 'cleaner') {
-              roleColor = Colors.purple;
+              roleColor = const Color(0xFF138D75);
             } else {
               roleColor = Colors.red;
             }

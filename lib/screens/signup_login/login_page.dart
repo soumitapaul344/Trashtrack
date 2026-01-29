@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../services/auth_service.dart';
+import 'package:trashtrack/services/auth_service.dart';
 
-import 'homes/citizen_home.dart';
-import 'homes/rider_home.dart';
-import 'homes/cleaner_home.dart';
-import 'homes/admin_home.dart';
+import 'package:trashtrack/screens/homes/citizen_home.dart';
+import 'package:trashtrack/screens/homes/rider_home.dart';
+import 'package:trashtrack/screens/homes/cleaner_home.dart';
+import 'package:trashtrack/screens/homes/admin_home.dart';
 import 'signup_page.dart';
 import 'verify_email_page.dart';
 

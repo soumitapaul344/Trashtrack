@@ -3,11 +3,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'signup_selection_page.dart';
 import 'admin_login_page.dart';
 import 'verify_email_page.dart';
-import 'homes/citizen_home.dart';
-import 'homes/rider_home.dart';
-import 'homes/cleaner_home.dart';
-import 'homes/admin_home.dart';
-import '../services/auth_service.dart';
+import 'package:trashtrack/screens/homes/citizen_home.dart';
+import 'package:trashtrack/screens/homes/rider_home.dart';
+import 'package:trashtrack/screens/homes/cleaner_home.dart';
+import 'package:trashtrack/screens/homes/admin_home.dart';
+import 'package:trashtrack/services/auth_service.dart';
 
 class AuthSelectionPage extends StatefulWidget {
   const AuthSelectionPage({super.key});

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../services/auth_service.dart';
+import 'package:trashtrack/services/auth_service.dart';
 
 class CitizenSignupPage extends StatefulWidget {
   const CitizenSignupPage({super.key});
