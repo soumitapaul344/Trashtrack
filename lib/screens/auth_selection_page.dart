@@ -1,12 +1,56 @@
 import 'package:flutter/material.dart';
-import 'citizen_signup_page.dart';
-import 'rider_signup_page.dart';
-import 'cleaner_signup_page.dart';
-import 'admin_login_page.dart';
+import 'signup_selection_page.dart';
 import 'login_page.dart';
+import 'admin_login_page.dart';
 
-class AuthSelectionPage extends StatelessWidget {
+class AuthSelectionPage extends StatefulWidget {
   const AuthSelectionPage({super.key});
+
+  @override
+  State<AuthSelectionPage> createState() => _AuthSelectionPageState();
+}
+
+class _AuthSelectionPageState extends State<AuthSelectionPage> {
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+  bool _obscurePassword = true;
+  bool _isLoading = false;
+
+  void showMsg(String message, {bool isError = true}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? Colors.redAccent : Colors.green,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  Future<void> login() async {
+    if (emailController.text.isEmpty || passwordController.text.isEmpty) {
+      showMsg("Please fill in all fields");
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      // This will be handled by regular login flow
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => LoginPage(
+            prefillEmail: emailController.text,
+            prefillPassword: passwordController.text,
+          ),
+        ),
+      );
+    } catch (e) {
+      showMsg(e.toString());
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -14,10 +58,9 @@ class AuthSelectionPage extends StatelessWidget {
       backgroundColor: const Color(0xFFF4F9F9),
       body: Center(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 50),
+          padding: const EdgeInsets.symmetric(horizontal: 25),
           child: Column(
             children: [
-              // Logo
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
@@ -26,7 +69,7 @@ class AuthSelectionPage extends StatelessWidget {
                 ),
                 child: const Icon(
                   Icons.recycling,
-                  size: 50,
+                  size: 42,
                   color: Color(0xFF1AAE9F),
                 ),
               ),
@@ -39,107 +82,116 @@ class AuthSelectionPage extends StatelessWidget {
                 "Eco-friendly waste management.",
                 style: TextStyle(color: Colors.blueGrey),
               ),
-              const SizedBox(height: 60),
+              const SizedBox(height: 50),
 
-              // Citizen Signup
-              _signupButton(
-                context,
-                "👤 Register as Citizen",
-                const Color(0xFF138D75),
-                () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const CitizenSignupPage()),
+              // Email field
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                child: TextField(
+                  controller: emailController,
+                  decoration: const InputDecoration(
+                    hintText: "Email Address",
+                    prefixIcon: Icon(Icons.email_outlined),
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.all(18),
+                  ),
                 ),
               ),
               const SizedBox(height: 15),
 
-              // Rider Signup
-              _signupButton(
-                context,
-                "🏍️ Register as Rider",
-                Colors.orange,
-                () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const RiderSignupPage()),
+              // Password field
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                child: TextField(
+                  controller: passwordController,
+                  obscureText: _obscurePassword,
+                  decoration: InputDecoration(
+                    hintText: "Password",
+                    prefixIcon: const Icon(Icons.lock_outline),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        _obscurePassword
+                            ? Icons.visibility_outlined
+                            : Icons.visibility_off_outlined,
+                      ),
+                      onPressed: () =>
+                          setState(() => _obscurePassword = !_obscurePassword),
+                    ),
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.all(18),
+                  ),
                 ),
               ),
-              const SizedBox(height: 15),
+              const SizedBox(height: 30),
 
-              // Cleaner Signup
-              _signupButton(
-                context,
-                "🧹 Register as Cleaner",
-                Colors.purple,
-                () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const CleanerSignupPage()),
-                ),
-              ),
-              const SizedBox(height: 15),
-
-              // Login Button
-              _signupButton(
-                context,
-                "🔑 Existing User Login",
-                Colors.blue,
-                () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const LoginPage()),
-                ),
-              ),
-
-              const SizedBox(height: 40),
-              const Divider(),
-              const SizedBox(height: 20),
-
-              // Admin Access Button
+              // Log In Button
               SizedBox(
                 width: double.infinity,
                 height: 55,
                 child: ElevatedButton(
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const AdminLoginPage()),
-                  ),
+                  onPressed: _isLoading ? null : login,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red,
+                    backgroundColor: const Color(0xFF138D75),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(15),
                     ),
                   ),
-                  child: const Text(
-                    "🛡️ Admin Access",
-                    style: TextStyle(color: Colors.white, fontSize: 16),
+                  child: _isLoading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text(
+                          "Log In",
+                          style: TextStyle(color: Colors.white),
+                        ),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Sign Up Link
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text("Don't have an account? "),
+                  GestureDetector(
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const SignupSelectionPage(),
+                      ),
+                    ),
+                    child: const Text(
+                      "Sign Up",
+                      style: TextStyle(
+                        color: Color(0xFF138D75),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 30),
+
+              // Admin Panel Link
+              GestureDetector(
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const AdminLoginPage()),
+                ),
+                child: const Text(
+                  "Admin Panel",
+                  style: TextStyle(
+                    color: Colors.grey,
+                    fontSize: 14,
                   ),
                 ),
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _signupButton(
-    BuildContext context,
-    String text,
-    Color color,
-    VoidCallback onPressed,
-  ) {
-    return SizedBox(
-      width: double.infinity,
-      height: 55,
-      child: ElevatedButton(
-        onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: color,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-        ),
-        child: Text(
-          text,
-          style: const TextStyle(color: Colors.white, fontSize: 16),
         ),
       ),
     );

@@ -10,16 +10,37 @@ import 'signup_page.dart';
 import 'verify_email_page.dart';
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+  final String? prefillEmail;
+  final String? prefillPassword;
+
+  const LoginPage({
+    super.key,
+    this.prefillEmail,
+    this.prefillPassword,
+  });
 
   @override
   State<LoginPage> createState() => _LoginPageState();
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final emailController = TextEditingController();
-  final passwordController = TextEditingController();
+  late final TextEditingController emailController;
+  late final TextEditingController passwordController;
   final auth = AuthService();
+
+  @override
+  void initState() {
+    super.initState();
+    emailController = TextEditingController(text: widget.prefillEmail ?? '');
+    passwordController = TextEditingController(text: widget.prefillPassword ?? '');
+  }
+
+  @override
+  void dispose() {
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
 
   bool _isLoading = false;
   bool _obscurePassword = true;
