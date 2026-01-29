@@ -18,6 +18,7 @@ class _CleanerSignupPageState extends State<CleanerSignupPage> {
   final roadController = TextEditingController();
   final blockController = TextEditingController();
   final contactController = TextEditingController();
+  final nidController = TextEditingController();
 
   final auth = AuthService();
 
@@ -35,9 +36,8 @@ class _CleanerSignupPageState extends State<CleanerSignupPage> {
         emailController.text.isEmpty ||
         passwordController.text.isEmpty ||
         houseController.text.isEmpty ||
-        blockController.text.isEmpty ||
-        contactController.text.isEmpty) {
-      showSnackBar("Please fill all mandatory fields");
+        nidController.text.isEmpty) {
+      showSnackBar("Please fill all mandatory fields for Cleaner");
       return;
     }
 
@@ -53,6 +53,7 @@ class _CleanerSignupPageState extends State<CleanerSignupPage> {
         block: blockController.text.trim(),
         contact: contactController.text.trim(),
         role: "cleaner",
+        nid: nidController.text.trim(),
       );
 
       showSnackBar(
@@ -106,6 +107,8 @@ class _CleanerSignupPageState extends State<CleanerSignupPage> {
             _signupField("Block / Sector", blockController, Icons.grid_view),
             const SizedBox(height: 15),
             _signupField("Contact Number", contactController, Icons.phone),
+            const SizedBox(height: 15),
+            _signupField("National ID (NID)", nidController, Icons.badge),
             const SizedBox(height: 35),
             SizedBox(
               width: double.infinity,

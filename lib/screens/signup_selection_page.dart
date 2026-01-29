@@ -63,7 +63,7 @@ class SignupSelectionPage extends StatelessWidget {
               _signupButton(
                 context,
                 "🏍️ Register as Rider",
-                Colors.orange,
+                const Color(0xFF138D75),
                 () => Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const RiderSignupPage()),
@@ -75,7 +75,7 @@ class SignupSelectionPage extends StatelessWidget {
               _signupButton(
                 context,
                 "🧹 Register as Cleaner",
-                Colors.purple,
+                const Color(0xFF138D75),
                 () => Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const CleanerSignupPage()),

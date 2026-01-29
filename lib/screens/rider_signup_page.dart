@@ -18,6 +18,9 @@ class _RiderSignupPageState extends State<RiderSignupPage> {
   final roadController = TextEditingController();
   final blockController = TextEditingController();
   final contactController = TextEditingController();
+  final vehicleTypeController = TextEditingController();
+  final vehicleNumberController = TextEditingController();
+  final nidController = TextEditingController();
 
   final auth = AuthService();
 
@@ -35,9 +38,11 @@ class _RiderSignupPageState extends State<RiderSignupPage> {
         emailController.text.isEmpty ||
         passwordController.text.isEmpty ||
         houseController.text.isEmpty ||
-        blockController.text.isEmpty ||
-        contactController.text.isEmpty) {
-      showSnackBar("Please fill all mandatory fields");
+        contactController.text.isEmpty ||
+        vehicleTypeController.text.isEmpty ||
+        vehicleNumberController.text.isEmpty ||
+        nidController.text.isEmpty) {
+      showSnackBar("Please fill all mandatory fields for Rider");
       return;
     }
 
@@ -53,6 +58,9 @@ class _RiderSignupPageState extends State<RiderSignupPage> {
         block: blockController.text.trim(),
         contact: contactController.text.trim(),
         role: "rider",
+        nid: nidController.text.trim(),
+        vehicleType: vehicleTypeController.text.trim(),
+        vehicleNumber: vehicleNumberController.text.trim(),
       );
 
       showSnackBar(
@@ -106,6 +114,12 @@ class _RiderSignupPageState extends State<RiderSignupPage> {
             _signupField("Block / Sector", blockController, Icons.grid_view),
             const SizedBox(height: 15),
             _signupField("Contact Number", contactController, Icons.phone),
+            const SizedBox(height: 15),
+            _signupField("Vehicle Type (bike/van/truck)", vehicleTypeController, Icons.directions_bike),
+            const SizedBox(height: 15),
+            _signupField("Vehicle Number", vehicleNumberController, Icons.confirmation_number),
+            const SizedBox(height: 15),
+            _signupField("National ID (NID)", nidController, Icons.badge),
             const SizedBox(height: 35),
             SizedBox(
               width: double.infinity,
