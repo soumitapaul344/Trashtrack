@@ -115,7 +115,7 @@ class _RiderSignupPageState extends State<RiderSignupPage> {
               ),
               padding: const EdgeInsets.symmetric(horizontal: 12),
               child: DropdownButtonFormField<String>(
-                initialValue: selectedVehicleType,
+                value: selectedVehicleType,
                 decoration: const InputDecoration(
                   border: InputBorder.none,
                   prefixIcon: Icon(Icons.directions_bike),
@@ -125,15 +125,24 @@ class _RiderSignupPageState extends State<RiderSignupPage> {
                   DropdownMenuItem(value: 'van', child: Text('Van')),
                   DropdownMenuItem(value: 'truck', child: Text('Truck')),
                 ],
-                onChanged: (val) => setState(() => selectedVehicleType = val ?? 'bike'),
+                onChanged: (val) =>
+                    setState(() => selectedVehicleType = val ?? 'bike'),
               ),
             ),
             const SizedBox(height: 15),
-            _signupField("Vehicle Number", vehicleNumberController, Icons.confirmation_number),
+            _signupField(
+              "Vehicle Number",
+              vehicleNumberController,
+              Icons.confirmation_number,
+            ),
             const SizedBox(height: 15),
             _signupField("National ID (NID)", nidController, Icons.badge),
             const SizedBox(height: 15),
-            _signupField("Driving License Number", drivingLicenseController, Icons.card_membership),
+            _signupField(
+              "Driving License Number",
+              drivingLicenseController,
+              Icons.card_membership,
+            ),
             const SizedBox(height: 15),
             _signupField("Email", emailController, Icons.email_outlined),
             const SizedBox(height: 15),
