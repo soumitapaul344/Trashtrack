@@ -54,6 +54,7 @@ class _CleanerSignupPageState extends State<CleanerSignupPage> {
         nid: nidController.text.trim(),
       );
 
+      if (!mounted) return;
       showSnackBar(
         "Registration successful! Pending admin approval. Check your email for verification.",
         isError: false,
@@ -61,7 +62,7 @@ class _CleanerSignupPageState extends State<CleanerSignupPage> {
 
       Navigator.pop(context);
     } catch (e) {
-      showSnackBar(e.toString());
+      if (mounted) showSnackBar(e.toString());
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

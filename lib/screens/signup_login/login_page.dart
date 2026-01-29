@@ -76,6 +76,7 @@ class _LoginPageState extends State<LoginPage> {
       // 2️⃣ Check email verification
       await user.reload();
       if (!user.emailVerified) {
+        if (!mounted) return;
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const VerifyEmailPage()),

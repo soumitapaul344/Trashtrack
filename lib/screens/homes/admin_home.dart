@@ -26,6 +26,7 @@ class _AdminHomeState extends State<AdminHome> with SingleTickerProviderStateMix
   Future<void> approveUser(String uid) async {
     try {
       await auth.approveStaff(uid);
+      if (!mounted) return;
       showMsg("User approved successfully!", isError: false);
       setState(() {}); // Refresh
     } catch (e) {
@@ -36,6 +37,7 @@ class _AdminHomeState extends State<AdminHome> with SingleTickerProviderStateMix
   Future<void> rejectUser(String uid) async {
     try {
       await auth.rejectStaff(uid);
+      if (!mounted) return;
       showMsg("User rejected successfully!", isError: false);
       setState(() {}); // Refresh
     } catch (e) {
@@ -67,7 +69,10 @@ class _AdminHomeState extends State<AdminHome> with SingleTickerProviderStateMix
             icon: const Icon(Icons.logout),
             onPressed: () async {
               await FirebaseAuth.instance.signOut();
-              if (mounted) Navigator.pushNamedAndRemoveUntil(context, '/auth', (_) => false);
+              if (!mounted) return;
+              // Safe to use context here; guard with mounted. Suppress linter.
+              // ignore: use_build_context_synchronously
+              Navigator.pushNamedAndRemoveUntil(context, '/auth', (_) => false);
             },
           ),
         ],

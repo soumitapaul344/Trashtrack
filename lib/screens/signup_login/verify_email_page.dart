@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:trashtrack/services/auth_service.dart';
 
 class VerifyEmailPage extends StatefulWidget {
-  const VerifyEmailPage({Key? key}) : super(key: key);
+  const VerifyEmailPage({super.key});
 
   @override
   State<VerifyEmailPage> createState() => _VerifyEmailPageState();
@@ -36,6 +36,7 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
       final verified = await _auth.isEmailVerified();
       if (verified && mounted) {
         _timer?.cancel();
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Email verified. You can now log in.')));
         Navigator.of(context).pop();
       }
@@ -61,8 +62,10 @@ class _VerifyEmailPageState extends State<VerifyEmailPage> {
           setState(() => _cooldown -= 1);
         }
       });
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Verification email resent')));
     } on Exception catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to resend: ${e.toString()}')));
     }
   }

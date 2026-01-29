@@ -55,6 +55,7 @@ class _CitizenSignupPageState extends State<CitizenSignupPage> {
         role: "citizen",
       );
 
+      if (!mounted) return;
       showSnackBar(
         "Verification link sent to your email. Please verify before login.",
         isError: false,
@@ -62,7 +63,7 @@ class _CitizenSignupPageState extends State<CitizenSignupPage> {
 
       Navigator.pop(context);
     } catch (e) {
-      showSnackBar(e.toString());
+      if (mounted) showSnackBar(e.toString());
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

@@ -62,6 +62,7 @@ class _RiderSignupPageState extends State<RiderSignupPage> {
         drivingLicense: drivingLicenseController.text.trim(),
       );
 
+      if (!mounted) return;
       showSnackBar(
         "Registration successful! Pending admin approval. Check your email for verification.",
         isError: false,
@@ -69,7 +70,7 @@ class _RiderSignupPageState extends State<RiderSignupPage> {
 
       Navigator.pop(context);
     } catch (e) {
-      showSnackBar(e.toString());
+      if (mounted) showSnackBar(e.toString());
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -114,7 +115,7 @@ class _RiderSignupPageState extends State<RiderSignupPage> {
               ),
               padding: const EdgeInsets.symmetric(horizontal: 12),
               child: DropdownButtonFormField<String>(
-                value: selectedVehicleType,
+                initialValue: selectedVehicleType,
                 decoration: const InputDecoration(
                   border: InputBorder.none,
                   prefixIcon: Icon(Icons.directions_bike),

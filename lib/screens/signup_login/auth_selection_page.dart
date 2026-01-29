@@ -54,6 +54,7 @@ class _AuthSelectionPageState extends State<AuthSelectionPage> {
       // Check email verification
       await user.reload();
       if (!user.emailVerified) {
+        if (!mounted) return;
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (_) => const VerifyEmailPage()),
