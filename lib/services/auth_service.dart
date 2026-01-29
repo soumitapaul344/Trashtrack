@@ -20,6 +20,7 @@ class AuthService {
     String? nid,
     String? vehicleType,
     String? vehicleNumber,
+    String? drivingLicense,
   }) async {
     // Create Firebase user
     final userCredential = await _auth.createUserWithEmailAndPassword(
@@ -53,6 +54,7 @@ class AuthService {
       data['vehicleType'] = vehicleType ?? '';
       data['vehicleNumber'] = vehicleNumber ?? '';
       data['nid'] = nid ?? '';
+      data['drivingLicense'] = drivingLicense ?? '';
       data['status'] = 'pending';
     }
 

@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'signup_selection_page.dart';
-import 'login_page.dart';
 import 'admin_login_page.dart';
+import 'verify_email_page.dart';
+import 'homes/citizen_home.dart';
+import 'homes/rider_home.dart';
+import 'homes/cleaner_home.dart';
+import 'homes/admin_home.dart';
+import '../services/auth_service.dart';
 
 class AuthSelectionPage extends StatefulWidget {
   const AuthSelectionPage({super.key});
@@ -15,6 +21,7 @@ class _AuthSelectionPageState extends State<AuthSelectionPage> {
   final passwordController = TextEditingController();
   bool _obscurePassword = true;
   bool _isLoading = false;
+  final auth = AuthService();
 
   void showMsg(String message, {bool isError = true}) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -35,21 +42,77 @@ class _AuthSelectionPageState extends State<AuthSelectionPage> {
     setState(() => _isLoading = true);
 
     try {
-      // This will be handled by regular login flow
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => LoginPage(
-            prefillEmail: emailController.text,
-            prefillPassword: passwordController.text,
-          ),
-        ),
+      // Sign in with email and password
+      final credential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: emailController.text.trim(),
+        password: passwordController.text.trim(),
       );
-    } catch (e) {
-      showMsg(e.toString());
+
+      final user = credential.user;
+      if (user == null) throw Exception("Login failed");
+
+      // Check email verification
+      await user.reload();
+      if (!user.emailVerified) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const VerifyEmailPage()),
+        );
+        showMsg("Please verify your email first");
+        return;
+      }
+
+      // Get role from Firestore
+      final role = await auth.getRole();
+      if (role == null) {
+        showMsg("User record not found in database.");
+        return;
+      }
+
+      // Navigate to correct home page
+      Widget nextHome;
+
+      if (role == "citizen") {
+        nextHome = const CitizenHomePage();
+      } else if (role == "rider") {
+        nextHome = const RiderHome();
+      } else if (role == "cleaner") {
+        nextHome = const CleanerHome();
+      } else if (role == "admin") {
+        nextHome = const AdminHome();
+      } else {
+        showMsg("User role not recognized.");
+        return;
+      }
+
+      if (!mounted) return;
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => nextHome),
+      );
+
+      showMsg("Login Successful!", isError: false);
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'user-not-found') {
+        showMsg("No user found.");
+      } else if (e.code == 'wrong-password') {
+        showMsg("Wrong password.");
+      } else if (e.code == 'pending-approval') {
+        showMsg("Your account is pending admin approval. Please check back later.");
+      } else {
+        showMsg(e.message ?? "Login error");
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  @override
+  void dispose() {
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
   }
 
   @override

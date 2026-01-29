@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'login_page.dart';
+import 'auth_selection_page.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -12,15 +12,16 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    _navigateToLogin();
+    _navigateToAuth();
   }
 
-  _navigateToLogin() async {
-    await Future.delayed(const Duration(seconds: 5), () {});
+  _navigateToAuth() async {
+    await Future.delayed(const Duration(seconds: 3), () {});
     if (!mounted) return;
+    // Always go to AuthSelectionPage, let auth pages handle routing
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => const LoginPage()),
+      MaterialPageRoute(builder: (context) => const AuthSelectionPage()),
     );
   }
 

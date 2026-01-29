@@ -1,7 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import '../services/auth_service.dart';
 import 'homes/admin_home.dart';
 
 class AdminLoginPage extends StatefulWidget {
@@ -40,44 +37,10 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
     setState(() => _isLoading = true);
 
     try {
-      // Check against fixed admin credentials
+      // Simple hardcoded admin credentials check (no Firebase Auth)
       if (emailController.text.trim() == adminEmail &&
           passwordController.text.trim() == adminPassword) {
-        // Try to sign in or create admin user if doesn't exist
-        try {
-          await FirebaseAuth.instance.signInWithEmailAndPassword(
-            email: adminEmail,
-            password: adminPassword,
-          );
-          
-          // Check if admin record exists in Firestore
-          final auth = AuthService();
-          final role = await auth.getRole();
-          if (role != "admin") {
-            throw Exception("Admin record not properly configured");
-          }
-        } catch (e) {
-          if (e.toString().contains("user-not-found")) {
-            // Admin doesn't exist, create the account
-            await FirebaseAuth.instance.createUserWithEmailAndPassword(
-              email: adminEmail,
-              password: adminPassword,
-            );
-            final user = FirebaseAuth.instance.currentUser;
-            if (user != null) {
-              await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
-                'uid': user.uid,
-                'email': adminEmail,
-                'role': 'admin',
-                'name': 'Administrator',
-                'createdAt': FieldValue.serverTimestamp(),
-              });
-            }
-          } else {
-            rethrow;
-          }
-        }
-
+        // Success - show admin panel
         if (!mounted) return;
 
         Navigator.pushReplacement(
@@ -89,7 +52,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
         showMsg("Invalid admin credentials");
       }
     } catch (e) {
-      showMsg(e.toString());
+      showMsg("Error: ${e.toString()}");
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

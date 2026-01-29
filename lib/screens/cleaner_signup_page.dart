@@ -14,9 +14,7 @@ class _CleanerSignupPageState extends State<CleanerSignupPage> {
   final nameController = TextEditingController();
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
-  final houseController = TextEditingController();
-  final roadController = TextEditingController();
-  final blockController = TextEditingController();
+  final workAreaController = TextEditingController();
   final contactController = TextEditingController();
   final nidController = TextEditingController();
 
@@ -35,7 +33,7 @@ class _CleanerSignupPageState extends State<CleanerSignupPage> {
     if (nameController.text.isEmpty ||
         emailController.text.isEmpty ||
         passwordController.text.isEmpty ||
-        houseController.text.isEmpty ||
+        workAreaController.text.isEmpty ||
         nidController.text.isEmpty) {
       showSnackBar("Please fill all mandatory fields for Cleaner");
       return;
@@ -48,9 +46,9 @@ class _CleanerSignupPageState extends State<CleanerSignupPage> {
         name: nameController.text.trim(),
         email: emailController.text.trim(),
         password: passwordController.text.trim(),
-        house: houseController.text.trim(),
-        road: roadController.text.trim(),
-        block: blockController.text.trim(),
+        house: workAreaController.text.trim(),
+        road: null,
+        block: workAreaController.text.trim(),
         contact: contactController.text.trim(),
         role: "cleaner",
         nid: nidController.text.trim(),
@@ -77,19 +75,32 @@ class _CleanerSignupPageState extends State<CleanerSignupPage> {
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 25),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
+            const SizedBox(height: 10),
+            CircleAvatar(
+              radius: 36,
+              backgroundColor: Colors.green,
+              child: Icon(Icons.cleaning_services, color: Colors.white, size: 32),
+            ),
+            const SizedBox(height: 14),
             const Text(
               "Register as Cleaner",
-              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 6),
             const Text(
-              "(Pending admin approval after registration)",
-              style: TextStyle(fontSize: 12, color: Colors.purple),
+              "Join as a verified waste cleaner",
+              style: TextStyle(fontSize: 13, color: Colors.black54),
+              textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 25),
+            const SizedBox(height: 22),
             _signupField("Full Name", nameController, Icons.person_outlined),
+            const SizedBox(height: 15),
+            _signupField("Work Area/Zone", workAreaController, Icons.location_on_outlined),
+            const SizedBox(height: 15),
+            _signupField("National ID (NID)", nidController, Icons.badge),
             const SizedBox(height: 15),
             _signupField("Email", emailController, Icons.email_outlined),
             const SizedBox(height: 15),
@@ -99,24 +110,16 @@ class _CleanerSignupPageState extends State<CleanerSignupPage> {
               Icons.lock_outline,
               isPass: true,
             ),
-            const SizedBox(height: 25),
-            _signupField("House No.", houseController, Icons.home_outlined),
-            const SizedBox(height: 15),
-            _signupField("Road (Optional)", roadController, Icons.add_road_outlined),
-            const SizedBox(height: 15),
-            _signupField("Block / Sector", blockController, Icons.grid_view),
             const SizedBox(height: 15),
             _signupField("Contact Number", contactController, Icons.phone),
-            const SizedBox(height: 15),
-            _signupField("National ID (NID)", nidController, Icons.badge),
-            const SizedBox(height: 35),
+            const SizedBox(height: 25),
             SizedBox(
               width: double.infinity,
               height: 55,
               child: ElevatedButton(
                 onPressed: _isLoading ? null : register,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.purple,
+                  backgroundColor: Colors.green,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -129,6 +132,7 @@ class _CleanerSignupPageState extends State<CleanerSignupPage> {
                       ),
               ),
             ),
+            const SizedBox(height: 20),
           ],
         ),
       ),
