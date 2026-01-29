@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../../services/auth_service.dart';
+import '../services/auth_service.dart';
 
 import 'homes/citizen_home.dart';
 import 'homes/rider_home.dart';
 import 'homes/cleaner_home.dart';
 import 'homes/admin_home.dart';
-import 'signup_login/signup_page.dart';
-import 'signup_login/verify_email_page.dart';
+import 'signup_page.dart';
+import 'verify_email_page.dart';
 
 class LoginPage extends StatefulWidget {
   final String? prefillEmail;

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'homes/admin_home.dart';
+import '../homes/admin_home.dart';
 
 class AdminLoginPage extends StatefulWidget {
   const AdminLoginPage({super.key});
@@ -75,7 +75,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Colors.red,
+                  color: Colors.green,
                   borderRadius: BorderRadius.circular(25),
                 ),
                 child: const Icon(
@@ -91,7 +91,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
               ),
               const Text(
                 "Restricted Access",
-                style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 50),
 
@@ -147,7 +147,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : login,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red,
+                    backgroundColor: Colors.green,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(15),
                     ),
