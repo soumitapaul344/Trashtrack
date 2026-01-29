@@ -169,12 +169,16 @@ class AuthService {
   Future<List<Map<String, dynamic>>> getPendingStaff() async {
     final snapshot = await _db
         .collection('users')
-        .where('isApproved', isEqualTo: false)
-        .where('role', whereIn: ['rider', 'cleaner'])
         .orderBy('createdAt', descending: true)
         .get();
 
-    return snapshot.docs.map((doc) => doc.data()).toList();
+    // Filter client-side to avoid composite index requirement
+    return snapshot.docs
+        .map((doc) => doc.data())
+        .where((user) =>
+            user['isApproved'] == false &&
+            (user['role'] == 'rider' || user['role'] == 'cleaner'))
+        .toList();
   }
 
   // ---------------------------
