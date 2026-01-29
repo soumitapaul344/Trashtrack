@@ -64,7 +64,7 @@ class _LoginPageState extends State<LoginPage> {
     setState(() => _isLoading = true);
 
     try {
-      // 1️⃣ Sign in
+      //  Sign in
       final credential = await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: emailController.text.trim(),
         password: passwordController.text.trim(),
@@ -73,7 +73,7 @@ class _LoginPageState extends State<LoginPage> {
       final user = credential.user;
       if (user == null) throw Exception("Login failed");
 
-      // 2️⃣ Check email verification
+      // Check email verification
       await user.reload();
       if (!user.emailVerified) {
         if (!mounted) return;
@@ -85,14 +85,14 @@ class _LoginPageState extends State<LoginPage> {
         return;
       }
 
-      // 3️⃣ Get role from Firestore
+      //  Get role from Firestore
       final role = await auth.getRole();
       if (role == null) {
         showMsg("User record not found in database.");
         return;
       }
 
-      // 4️⃣ Navigate to correct home page
+      //  Navigate to correct home page
       Widget nextHome;
 
       if (role == "citizen") {

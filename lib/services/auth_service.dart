@@ -37,6 +37,10 @@ class AuthService {
 
     //  Save all fields in Firestore
     bool isApproved = role == "citizen"; // Citizens auto-approved, staff needs admin approval
+    
+    // Format address fields
+    String homeAddress = "$house, $road";
+    
     final data = {
       "uid": user.uid,
       "name": name,
@@ -45,6 +49,9 @@ class AuthService {
       "road": road ?? "N/A",
       "block": block,
       "contact": contact,
+      "phone": contact, // Add phone field
+      "homeAddress": homeAddress, // Add formatted address
+      "areaZone": block, // Add area/zone
       "role": role,
       "isApproved": isApproved,
       "createdAt": FieldValue.serverTimestamp(),
