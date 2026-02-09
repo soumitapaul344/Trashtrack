@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../homes/admin_home.dart';
 
 class AdminLoginPage extends StatefulWidget {
@@ -40,6 +41,10 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
       // Simple hardcoded admin credentials check (no Firebase Auth)
       if (emailController.text.trim() == adminEmail &&
           passwordController.text.trim() == adminPassword) {
+        await FirebaseAuth.instance.signInWithEmailAndPassword(
+          email: adminEmail,
+          password: adminPassword,
+        );
         // Success - show admin panel
         if (!mounted) return;
 

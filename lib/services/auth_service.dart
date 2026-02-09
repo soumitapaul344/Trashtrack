@@ -5,6 +5,121 @@ class AuthService {
   final _auth = FirebaseAuth.instance;
   final _db = FirebaseFirestore.instance;
 
+  String? _roleFromCollection(String collection) {
+    final c = collection.toLowerCase();
+    if (c == 'citizen' || c == 'citizens') return 'citizen';
+    if (c == 'rider' || c == 'riders') return 'rider';
+    if (c == 'cleaner' || c == 'cleaners') return 'cleaner';
+    return null;
+  }
+
+  bool _boolFrom(dynamic v) {
+    if (v is bool) return v;
+    if (v is String) {
+      final s = v.toLowerCase();
+      return s == 'true' || s == 'yes' || s == '1';
+    }
+    if (v is num) return v != 0;
+    return false;
+  }
+
+  bool _deriveIsApproved(Map<String, dynamic> user) {
+    if (user.containsKey('isApproved')) return _boolFrom(user['isApproved']);
+    if (user.containsKey('approved')) return _boolFrom(user['approved']);
+
+    final status = (user['status'] as String?)?.toLowerCase();
+    if (status == 'pending' || status == 'rejected') return false;
+    if (status == 'approved' || status == 'active' || status == 'verified') {
+      return true;
+    }
+
+    final role = (user['role'] as String?)?.toLowerCase();
+    if (role == 'citizen') return true;
+
+    return false;
+  }
+
+  bool _deriveEmailVerified(Map<String, dynamic> user) {
+    if (user.containsKey('emailVerified')) return _boolFrom(user['emailVerified']);
+    if (user.containsKey('email_verified')) return _boolFrom(user['email_verified']);
+    return false;
+  }
+
+  DateTime? _toDateTime(dynamic v) {
+    if (v is Timestamp) return v.toDate();
+    if (v is DateTime) return v;
+    if (v is String) {
+      return DateTime.tryParse(v);
+    }
+    return null;
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchUsersFromCollection(String collection) async {
+    final snapshot = await _db.collection(collection).get();
+    final roleHint = _roleFromCollection(collection);
+
+    return snapshot.docs.map((doc) {
+      final data = Map<String, dynamic>.from(doc.data());
+      data['_collection'] = collection;
+      data['_docId'] = doc.id;
+      data['uid'] = data['uid'] ?? doc.id;
+      if (roleHint != null) {
+        final role = (data['role'] as String?)?.trim();
+        if (role == null || role.isEmpty) {
+          data['role'] = roleHint;
+        }
+      }
+      data['isApproved'] = _deriveIsApproved(data);
+      data['emailVerified'] = _deriveEmailVerified(data);
+      return data;
+    }).toList();
+  }
+
+  List<Map<String, dynamic>> _mergeUsers(List<List<Map<String, dynamic>>> lists) {
+    final byUid = <String, Map<String, dynamic>>{};
+
+    for (final list in lists) {
+      for (final user in list) {
+        final uid = (user['uid'] as String?)?.trim();
+        if (uid == null || uid.isEmpty) {
+          continue;
+        }
+
+        if (!byUid.containsKey(uid)) {
+          byUid[uid] = user;
+          continue;
+        }
+
+        final existing = byUid[uid]!;
+        final existingFromUsers = (existing['_collection'] as String?) == 'users';
+        final newFromUsers = (user['_collection'] as String?) == 'users';
+
+        if (newFromUsers && !existingFromUsers) {
+          byUid[uid] = user;
+          continue;
+        }
+
+        if (!existingFromUsers && !newFromUsers) {
+          // Prefer the record with more fields if both are legacy collections.
+          if (user.length > existing.length) {
+            byUid[uid] = user;
+          }
+        }
+      }
+    }
+
+    final merged = byUid.values.toList();
+    merged.sort((a, b) {
+      final aDate = _toDateTime(a['createdAt']);
+      final bDate = _toDateTime(b['createdAt']);
+      if (aDate == null && bDate == null) return 0;
+      if (aDate == null) return 1;
+      if (bDate == null) return -1;
+      return bDate.compareTo(aDate);
+    });
+    return merged;
+  }
+
   // ---------------------------
   // Signup citizen account
   // ---------------------------
@@ -179,30 +294,27 @@ class AuthService {
 
   // Get pending staff (riders & cleaners waiting for approval) 
   Future<List<Map<String, dynamic>>> getPendingStaff() async {
-    final snapshot = await _db
-        .collection('users')
-        .orderBy('createdAt', descending: true)
-        .get();
-
-    // Filter client-side to avoid composite index requirement
-    return snapshot.docs
-        .map((doc) => doc.data())
-        .where((user) =>
-            user['isApproved'] == false &&
-            (user['role'] == 'rider' || user['role'] == 'cleaner'))
+    final allUsers = await getAllUsers();
+    return allUsers
+        .where((user) {
+          final role = (user['role'] as String?)?.toLowerCase();
+          final isApproved = user['isApproved'] as bool? ?? false;
+          return !isApproved && (role == 'rider' || role == 'cleaner');
+        })
         .toList();
   }
   // Approve staff (by admin)
-  Future<void> approveStaff(String uid) async {
-    await _db.collection('users').doc(uid).update({
+  Future<void> approveStaff(String uid, {String collection = 'users'}) async {
+    await _db.collection(collection).doc(uid).update({
       'isApproved': true,
+      'status': 'approved',
     });
   }
   // Reject/Delete staff (by admin) 
-  Future<void> rejectStaff(String uid) async {
+  Future<void> rejectStaff(String uid, {String collection = 'users'}) async {
     try {
       // Delete from Firestore
-      await _db.collection('users').doc(uid).delete();
+      await _db.collection(collection).doc(uid).delete();
     } catch (e) {
       throw Exception("Failed to reject staff: $e");
     }
@@ -210,11 +322,28 @@ class AuthService {
 
   // Get all users (for admin dashboard)
   Future<List<Map<String, dynamic>>> getAllUsers() async {
-    final snapshot = await _db
-        .collection('users')
-        .orderBy('createdAt', descending: true)
-        .get();
+    final collections = <String>[
+      'users',
+      'Citizen',
+      'Cleaner',
+      'Rider',
+      'citizens',
+      'riders',
+      'cleaners',
+    ];
 
-    return snapshot.docs.map((doc) => doc.data()).toList();
+    Future<List<Map<String, dynamic>>> safeFetch(String c) async {
+      try {
+        return await _fetchUsersFromCollection(c);
+      } catch (_) {
+        return [];
+      }
+    }
+
+    final results = await Future.wait(
+      collections.map((c) => safeFetch(c)),
+    );
+
+    return _mergeUsers(results);
   }
 }

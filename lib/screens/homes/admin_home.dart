@@ -23,9 +23,9 @@ class _AdminHomeState extends State<AdminHome> with SingleTickerProviderStateMix
     );
   }
 
-  Future<void> approveUser(String uid) async {
+  Future<void> approveUser(String uid, {String collection = 'users'}) async {
     try {
-      await auth.approveStaff(uid);
+      await auth.approveStaff(uid, collection: collection);
       if (!mounted) return;
       showMsg("User approved successfully!", isError: false);
       setState(() {}); // Refresh
@@ -34,9 +34,9 @@ class _AdminHomeState extends State<AdminHome> with SingleTickerProviderStateMix
     }
   }
 
-  Future<void> rejectUser(String uid) async {
+  Future<void> rejectUser(String uid, {String collection = 'users'}) async {
     try {
-      await auth.rejectStaff(uid);
+      await auth.rejectStaff(uid, collection: collection);
       if (!mounted) return;
       showMsg("User rejected successfully!", isError: false);
       setState(() {}); // Refresh
@@ -123,7 +123,13 @@ class _AdminHomeState extends State<AdminHome> with SingleTickerProviderStateMix
           itemBuilder: (context, index) {
             final user = pending[index];
             final uid = user['uid'] as String;
-            final name = user['name'] as String? ?? 'Unknown';
+            final collection = user['_collection'] as String? ?? 'users';
+            final docId = user['_docId'] as String? ?? uid;
+            final name =
+                user['name'] as String? ??
+                user['fullName'] as String? ??
+                user['username'] as String? ??
+                'Unknown';
             final email = user['email'] as String? ?? '';
             final role = user['role'] as String? ?? '';
             final verified = user['emailVerified'] as bool? ?? false;
@@ -196,7 +202,7 @@ class _AdminHomeState extends State<AdminHome> with SingleTickerProviderStateMix
                       children: [
                         Expanded(
                           child: ElevatedButton(
-                            onPressed: () => approveUser(uid),
+                            onPressed: () => approveUser(docId, collection: collection),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.green,
                             ),
@@ -206,7 +212,7 @@ class _AdminHomeState extends State<AdminHome> with SingleTickerProviderStateMix
                         const SizedBox(width: 12),
                         Expanded(
                           child: ElevatedButton(
-                            onPressed: () => rejectUser(uid),
+                            onPressed: () => rejectUser(docId, collection: collection),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.red,
                             ),
@@ -248,7 +254,11 @@ class _AdminHomeState extends State<AdminHome> with SingleTickerProviderStateMix
           itemCount: users.length,
           itemBuilder: (context, index) {
             final user = users[index];
-            final name = user['name'] as String? ?? 'Unknown';
+            final name =
+                user['name'] as String? ??
+                user['fullName'] as String? ??
+                user['username'] as String? ??
+                'Unknown';
             final email = user['email'] as String? ?? '';
             final role = user['role'] as String? ?? '';
             final approved = user['isApproved'] as bool? ?? false;
