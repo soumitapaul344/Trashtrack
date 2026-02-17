@@ -19,8 +19,6 @@ class _CitizenHomePageState extends State<CitizenHomePage> {
   final Color primaryGreen = const Color(0xFF138D75);
   final Color scaffoldBg = const Color(0xFFF4F9F9);
 
-
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -56,7 +54,7 @@ class _CitizenHomePageState extends State<CitizenHomePage> {
               );
             },
             child: CircleAvatar(
-              backgroundColor: primaryGreen.withOpacity(0.1),
+              backgroundColor: primaryGreen.withValues(alpha: 0.1),
               child: Icon(Icons.person, color: primaryGreen),
             ),
           ),
@@ -162,9 +160,8 @@ class _CitizenHomePageState extends State<CitizenHomePage> {
         if (snapshot.hasData) {
           final docs = snapshot.data!.docs;
           total = docs.length;
-          pending =
-              docs.where((doc) => doc['status'] == 'pending').length;
-          // 'done' usually means completed. 
+          pending = docs.where((doc) => doc['status'] == 'pending').length;
+          // 'done' usually means completed.
           done = docs.where((doc) => doc['status'] == 'completed').length;
         }
 
@@ -174,21 +171,36 @@ class _CitizenHomePageState extends State<CitizenHomePage> {
               "Total",
               total.toString(),
               Colors.blue,
-              () => _navigateToRequestList(context, "All Requests", user.uid, null),
+              () => _navigateToRequestList(
+                context,
+                "All Requests",
+                user.uid,
+                null,
+              ),
             ),
             const SizedBox(width: 12),
             _statsCard(
               "Pending",
               pending.toString(),
               Colors.orange,
-              () => _navigateToRequestList(context, "Pending Requests", user.uid, 'pending'),
+              () => _navigateToRequestList(
+                context,
+                "Pending Requests",
+                user.uid,
+                'pending',
+              ),
             ),
             const SizedBox(width: 12),
             _statsCard(
               "Done",
               done.toString(),
               Colors.green,
-              () => _navigateToRequestList(context, "Completed Requests", user.uid, 'completed'),
+              () => _navigateToRequestList(
+                context,
+                "Completed Requests",
+                user.uid,
+                'completed',
+              ),
             ),
           ],
         );
@@ -197,20 +209,26 @@ class _CitizenHomePageState extends State<CitizenHomePage> {
   }
 
   void _navigateToRequestList(
-      BuildContext context, String title, String uid, String? status) {
+    BuildContext context,
+    String title,
+    String uid,
+    String? status,
+  ) {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => RequestListPage(
-          title: title,
-          userId: uid,
-          statusFilter: status,
-        ),
+        builder: (context) =>
+            RequestListPage(title: title, userId: uid, statusFilter: status),
       ),
     );
   }
 
-  Widget _statsCard(String title, String count, Color color, VoidCallback onTap) {
+  Widget _statsCard(
+    String title,
+    String count,
+    Color color,
+    VoidCallback onTap,
+  ) {
     return Expanded(
       child: GestureDetector(
         onTap: onTap,
@@ -221,7 +239,7 @@ class _CitizenHomePageState extends State<CitizenHomePage> {
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: color.withOpacity(0.1),
+                color: color.withValues(alpha: 0.1),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -267,7 +285,7 @@ class _CitizenHomePageState extends State<CitizenHomePage> {
             borderRadius: BorderRadius.circular(12),
           ),
           elevation: 5,
-          shadowColor: primaryGreen.withOpacity(0.4),
+          shadowColor: primaryGreen.withValues(alpha: 0.4),
         ),
         onPressed: () {
           // Navigate to Pickup Request Page
@@ -347,7 +365,7 @@ class _CitizenHomePageState extends State<CitizenHomePage> {
                 borderRadius: BorderRadius.circular(12),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
+                    color: Colors.black.withValues(alpha: 0.04),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -361,7 +379,7 @@ class _CitizenHomePageState extends State<CitizenHomePage> {
                 leading: Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: primaryGreen.withOpacity(0.1),
+                    color: primaryGreen.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(Icons.recycling, color: primaryGreen),
@@ -398,8 +416,8 @@ class _CitizenHomePageState extends State<CitizenHomePage> {
                   ),
                   decoration: BoxDecoration(
                     color: isCompleted
-                        ? Colors.green.withOpacity(0.1)
-                        : Colors.orange.withOpacity(0.1),
+                        ? Colors.green.withValues(alpha: 0.1)
+                        : Colors.orange.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(

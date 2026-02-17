@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 
 class ActivityService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -23,7 +24,7 @@ class ActivityService {
         'timestamp': FieldValue.serverTimestamp(),
       });
     } catch (e) {
-      print('Error logging activity: $e');
+      if (kDebugMode) debugPrint('Error logging activity: $e');
     }
   }
 
@@ -39,7 +40,7 @@ class ActivityService {
 
       return snapshot.docs.map((doc) => doc.data()).toList();
     } catch (e) {
-      print('Error fetching activities: $e');
+      if (kDebugMode) debugPrint('Error fetching activities: $e');
       return [];
     }
   }
@@ -55,7 +56,7 @@ class ActivityService {
 
       return snapshot.docs.map((doc) => doc.data()).toList();
     } catch (e) {
-      print('Error fetching all activities: $e');
+      if (kDebugMode) debugPrint('Error fetching all activities: $e');
       return [];
     }
   }

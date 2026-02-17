@@ -15,6 +15,7 @@ class _PickupRequestPageState extends State<PickupRequestPage> {
   final _addressController = TextEditingController();
 
   String? _selectedWasteType;
+  String? _selectedTimeSlot;
   bool _isLoading = false;
 
   final List<String> _wasteTypes = [
@@ -24,6 +25,15 @@ class _PickupRequestPageState extends State<PickupRequestPage> {
     'Metal',
     'E-waste',
     'Others',
+  ];
+
+  final List<String> _timeSlots = [
+    '8:00 AM - 10:00 AM',
+    '10:00 AM - 12:00 PM',
+    '12:00 PM - 2:00 PM',
+    '2:00 PM - 4:00 PM',
+    '4:00 PM - 6:00 PM',
+    '6:00 PM - 8:00 PM',
   ];
 
   @override
@@ -52,7 +62,9 @@ class _PickupRequestPageState extends State<PickupRequestPage> {
   }
 
   Future<void> _submitRequest() async {
-    if (!_formKey.currentState!.validate() || _selectedWasteType == null) {
+    if (!_formKey.currentState!.validate() ||
+        _selectedWasteType == null ||
+        _selectedTimeSlot == null) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(const SnackBar(content: Text('Please fill all fields')));
@@ -72,6 +84,7 @@ class _PickupRequestPageState extends State<PickupRequestPage> {
         'wasteType': _selectedWasteType,
         'quantity': _quantityController.text,
         'address': _addressController.text,
+        'timeSlot': _selectedTimeSlot,
         'status': 'pending',
         'riderId': null,
         'createdAt': FieldValue.serverTimestamp(),
@@ -143,7 +156,7 @@ class _PickupRequestPageState extends State<PickupRequestPage> {
               ),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
-                value: _selectedWasteType,
+                initialValue: _selectedWasteType,
                 decoration: _inputDecoration(
                   "Select waste type",
                   Icons.category,
@@ -186,6 +199,26 @@ class _PickupRequestPageState extends State<PickupRequestPage> {
                 maxLines: 2,
                 validator: (val) =>
                     val!.isEmpty ? 'Please enter address' : null,
+              ),
+              const SizedBox(height: 20),
+
+              const Text(
+                "Preferred Time Slot",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              DropdownButtonFormField<String>(
+                initialValue: _selectedTimeSlot,
+                decoration: _inputDecoration(
+                  "Select time slot",
+                  Icons.access_time,
+                ),
+                items: _timeSlots.map((slot) {
+                  return DropdownMenuItem(value: slot, child: Text(slot));
+                }).toList(),
+                onChanged: (val) => setState(() => _selectedTimeSlot = val),
+                validator: (val) =>
+                    val == null ? 'Please select a time slot' : null,
               ),
               const SizedBox(height: 40),
 
