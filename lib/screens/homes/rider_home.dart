@@ -300,19 +300,14 @@ class _RiderHomeState extends State<RiderHome> {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection('pickup_requests')
-          .limit(4)
+          .where('status', isEqualTo: 'pending')
           .snapshots(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
         }
 
-        // Filter only pending requests
-        final docs = snapshot.data!.docs.where((doc) {
-          final data = doc.data() as Map<String, dynamic>;
-          String status = data['status'] ?? 'pending';
-          return status == 'pending';
-        }).toList();
+        final docs = snapshot.data!.docs;
 
         if (docs.isEmpty) {
           return const Padding(
@@ -343,7 +338,7 @@ class _RiderHomeState extends State<RiderHome> {
   ) {
     String wasteType = req['wasteType'] ?? "Unknown";
     String address = req['address'] ?? "";
-    String weight = req['weight'] ?? "0";
+    String weight = req['quantity'] ?? "0";
     String timeSlot = req['timeSlot'] ?? "00:00";
     String endTime = req['endTime'] ?? "00:00";
     String status = req['status'] ?? "pending";

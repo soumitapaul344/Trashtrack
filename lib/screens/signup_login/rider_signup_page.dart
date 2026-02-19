@@ -115,7 +115,7 @@ class _RiderSignupPageState extends State<RiderSignupPage> {
               ),
               padding: const EdgeInsets.symmetric(horizontal: 12),
               child: DropdownButtonFormField<String>(
-                initialValue: selectedVehicleType,
+                value: selectedVehicleType,
                 decoration: const InputDecoration(
                   border: InputBorder.none,
                   prefixIcon: Icon(Icons.directions_bike),

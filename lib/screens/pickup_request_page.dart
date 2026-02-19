@@ -156,7 +156,7 @@ class _PickupRequestPageState extends State<PickupRequestPage> {
               ),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
-                initialValue: _selectedWasteType,
+                value: _selectedWasteType,
                 decoration: _inputDecoration(
                   "Select waste type",
                   Icons.category,
@@ -208,7 +208,7 @@ class _PickupRequestPageState extends State<PickupRequestPage> {
               ),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
-                initialValue: _selectedTimeSlot,
+                value: _selectedTimeSlot,
                 decoration: _inputDecoration(
                   "Select time slot",
                   Icons.access_time,

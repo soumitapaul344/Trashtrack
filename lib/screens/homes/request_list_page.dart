@@ -24,9 +24,6 @@ class RequestListPage extends StatelessWidget {
       query = query.where('status', isEqualTo: statusFilter);
     }
 
-    // Order by creation time
-    query = query.orderBy('createdAt', descending: true);
-
     return Scaffold(
       appBar: AppBar(
         title: Text(title, style: const TextStyle(color: Colors.black)),
@@ -61,6 +58,14 @@ class RequestListPage extends StatelessWidget {
           }
 
           final docs = snapshot.data!.docs;
+
+          // Sort by createdAt in Dart (descending)
+          docs.sort((a, b) {
+            final aTime = a['createdAt'] as Timestamp?;
+            final bTime = b['createdAt'] as Timestamp?;
+            if (aTime == null || bTime == null) return 0;
+            return bTime.compareTo(aTime);
+          });
 
           return ListView.builder(
             padding: const EdgeInsets.all(16),

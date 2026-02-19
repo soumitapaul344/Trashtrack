@@ -40,8 +40,10 @@ class AuthService {
   }
 
   bool _deriveEmailVerified(Map<String, dynamic> user) {
-    if (user.containsKey('emailVerified')) return _boolFrom(user['emailVerified']);
-    if (user.containsKey('email_verified')) return _boolFrom(user['email_verified']);
+    if (user.containsKey('emailVerified'))
+      return _boolFrom(user['emailVerified']);
+    if (user.containsKey('email_verified'))
+      return _boolFrom(user['email_verified']);
     return false;
   }
 
@@ -54,7 +56,9 @@ class AuthService {
     return null;
   }
 
-  Future<List<Map<String, dynamic>>> _fetchUsersFromCollection(String collection) async {
+  Future<List<Map<String, dynamic>>> _fetchUsersFromCollection(
+    String collection,
+  ) async {
     final snapshot = await _db.collection(collection).get();
     final roleHint = _roleFromCollection(collection);
 
@@ -75,7 +79,9 @@ class AuthService {
     }).toList();
   }
 
-  List<Map<String, dynamic>> _mergeUsers(List<List<Map<String, dynamic>>> lists) {
+  List<Map<String, dynamic>> _mergeUsers(
+    List<List<Map<String, dynamic>>> lists,
+  ) {
     final byUid = <String, Map<String, dynamic>>{};
 
     for (final list in lists) {
@@ -91,7 +97,8 @@ class AuthService {
         }
 
         final existing = byUid[uid]!;
-        final existingFromUsers = (existing['_collection'] as String?) == 'users';
+        final existingFromUsers =
+            (existing['_collection'] as String?) == 'users';
         final newFromUsers = (user['_collection'] as String?) == 'users';
 
         if (newFromUsers && !existingFromUsers) {
@@ -151,11 +158,12 @@ class AuthService {
     await user.sendEmailVerification();
 
     //  Save all fields in Firestore
-    bool isApproved = role == "citizen"; // Citizens auto-approved, staff needs admin approval
-    
+    // For riders and cleaners: require both email verification AND admin approval
+    bool isApproved = role == "citizen"; // Citizens auto-approved
+
     // Format address fields
     String homeAddress = "$house, $road";
-    
+
     final data = {
       "uid": user.uid,
       "name": name,
@@ -169,6 +177,7 @@ class AuthService {
       "areaZone": block, // Add area/zone
       "role": role,
       "isApproved": isApproved,
+      "emailVerified": false, // Track email verification status in Firestore
       "createdAt": FieldValue.serverTimestamp(),
     };
 
@@ -188,7 +197,7 @@ class AuthService {
     await _db.collection("users").doc(user.uid).set(data);
   }
 
-// Login returns current user
+  // Login returns current user
 
   Future<User?> login(String email, String password) async {
     final credential = await _auth.signInWithEmailAndPassword(
@@ -206,23 +215,37 @@ class AuthService {
       );
     }
 
-    // Check if approved (for riders/cleaners)
+    // Check if approved (for riders/cleaners) - requires BOTH email verification AND admin approval
     if (user != null) {
       final doc = await _db.collection('users').doc(user.uid).get();
       if (doc.exists) {
         final isApproved = doc.get('isApproved') as bool? ?? false;
         final role = doc.get('role') as String? ?? '';
-        if (!isApproved && (role == 'rider' || role == 'cleaner')) {
-          throw FirebaseAuthException(
-            code: "pending-approval",
-            message: "Your account is pending admin approval",
-          );
+        final emailVerified =
+            doc.get('emailVerified') as bool? ?? user.emailVerified;
+
+        // For riders and cleaners: require BOTH email verification AND admin approval
+        if (role == 'rider' || role == 'cleaner') {
+          if (!emailVerified) {
+            throw FirebaseAuthException(
+              code: "email-not-verified",
+              message: "Please verify your email before login",
+            );
+          }
+          if (!isApproved) {
+            throw FirebaseAuthException(
+              code: "pending-approval",
+              message:
+                  "Your account is pending admin approval. Please contact admin.",
+            );
+          }
         }
       }
     }
 
     return user;
-  } 
+  }
+
   // Logout
   Future<void> logout() async {
     await _auth.signOut();
@@ -231,7 +254,11 @@ class AuthService {
   // Resend verification email
   Future<void> resendVerificationEmail() async {
     final user = _auth.currentUser;
-    if (user == null) throw FirebaseAuthException(code: 'no-current-user', message: 'No signed in user');
+    if (user == null)
+      throw FirebaseAuthException(
+        code: 'no-current-user',
+        message: 'No signed in user',
+      );
     await user.sendEmailVerification();
   }
 
@@ -240,8 +267,21 @@ class AuthService {
     final user = _auth.currentUser;
     if (user == null) return false;
     await user.reload();
+
+    // If email is now verified, update Firestore
+    if (user.emailVerified) {
+      try {
+        await _db.collection('users').doc(user.uid).update({
+          'emailVerified': true,
+        });
+      } catch (e) {
+        // Silently handle update errors
+      }
+    }
+
     return _auth.currentUser?.emailVerified ?? false;
   }
+
   // Get role of current user
   Future<String?> getRole() async {
     final user = _auth.currentUser;
@@ -292,17 +332,16 @@ class AuthService {
     });
   }
 
-  // Get pending staff (riders & cleaners waiting for approval) 
+  // Get pending staff (riders & cleaners waiting for approval)
   Future<List<Map<String, dynamic>>> getPendingStaff() async {
     final allUsers = await getAllUsers();
-    return allUsers
-        .where((user) {
-          final role = (user['role'] as String?)?.toLowerCase();
-          final isApproved = user['isApproved'] as bool? ?? false;
-          return !isApproved && (role == 'rider' || role == 'cleaner');
-        })
-        .toList();
+    return allUsers.where((user) {
+      final role = (user['role'] as String?)?.toLowerCase();
+      final isApproved = user['isApproved'] as bool? ?? false;
+      return !isApproved && (role == 'rider' || role == 'cleaner');
+    }).toList();
   }
+
   // Approve staff (by admin)
   Future<void> approveStaff(String uid, {String collection = 'users'}) async {
     await _db.collection(collection).doc(uid).update({
@@ -310,7 +349,8 @@ class AuthService {
       'status': 'approved',
     });
   }
-  // Reject/Delete staff (by admin) 
+
+  // Reject/Delete staff (by admin)
   Future<void> rejectStaff(String uid, {String collection = 'users'}) async {
     try {
       // Delete from Firestore
@@ -340,9 +380,7 @@ class AuthService {
       }
     }
 
-    final results = await Future.wait(
-      collections.map((c) => safeFetch(c)),
-    );
+    final results = await Future.wait(collections.map((c) => safeFetch(c)));
 
     return _mergeUsers(results);
   }
