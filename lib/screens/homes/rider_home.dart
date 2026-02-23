@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'profile_page.dart';
 
 class RiderHome extends StatefulWidget {
@@ -215,9 +216,9 @@ class _RiderHomeState extends State<RiderHome> {
               child: _summaryCard("Pickups", pickups.toString(), Colors.green),
             ),
             const SizedBox(width: 12),
-            Expanded(
-              child: _summaryCard("Earnings", "₹$earnings", Colors.orange),
-            ),
+              Expanded(
+                child: _summaryCard("Earnings", "৳$earnings", Colors.orange),
+              ),
           ],
         );
       },
@@ -542,6 +543,25 @@ class _RiderHomeState extends State<RiderHome> {
     }
   }
 
+  // Dial helper: open phone dialer when rider taps the provided number
+  Future<void> _dialPhone(String phone) async {
+    if (phone.trim().isEmpty || phone == 'Not available') {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Phone not available")));
+      return;
+    }
+
+    try {
+      final uri = Uri(scheme: 'tel', path: phone);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri);
+      } else {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Cannot open dialer")));
+      }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e")));
+    }
+  }
+
   // ================= PICKUP HISTORY =================
   Widget _buildHistory() {
     return SingleChildScrollView(
@@ -668,6 +688,7 @@ class _RiderHomeState extends State<RiderHome> {
     String weight = req['weight'] ?? "0";
     int earnings = req['earnings'] ?? 0;
     String status = req['status'] ?? 'accepted';
+    String phoneText = (req['phone'] ?? req['contact'] ?? 'Not available').toString();
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -711,9 +732,9 @@ class _RiderHomeState extends State<RiderHome> {
                   ),
                 ],
               ),
-              if (status == 'completed')
+                if (status == 'completed')
                 const Text(
-                  "₹50",
+                  "৳50",
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -750,26 +771,63 @@ class _RiderHomeState extends State<RiderHome> {
           if (status == 'accepted')
             Padding(
               padding: const EdgeInsets.only(top: 10),
-              child: SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () => _markAsDone(docId),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(6),
+              child: Row(
+                children: [
+                  // Display citizen phone number provided in the pickup request
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.green,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: InkWell(
+                        onTap: phoneText == 'Not available' ? null : () => _dialPhone(phoneText),
+                        borderRadius: BorderRadius.circular(6),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.phone, size: 14, color: Colors.white),
+                            const SizedBox(width: 6),
+                            Flexible(
+                              child: Text(
+                                phoneText,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ),
-                  child: const Text(
-                    "Mark as Done",
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () => _markAsDone(docId),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                      ),
+                      child: const Text(
+                        "Mark as Done",
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                ],
               ),
             ),
         ],
@@ -882,7 +940,7 @@ class _RiderHomeState extends State<RiderHome> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          "₹$todayEarnings",
+                          "৳$todayEarnings",
                           style: const TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
@@ -911,7 +969,7 @@ class _RiderHomeState extends State<RiderHome> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          "₹$weekEarnings",
+                          "৳$weekEarnings",
                           style: const TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
@@ -955,7 +1013,7 @@ class _RiderHomeState extends State<RiderHome> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    "₹$monthEarnings",
+                    "৳$monthEarnings",
                     style: const TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
@@ -1034,7 +1092,7 @@ class _RiderHomeState extends State<RiderHome> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        "₹50",
+                        "৳50",
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,

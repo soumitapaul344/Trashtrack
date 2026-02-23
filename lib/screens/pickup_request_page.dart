@@ -13,6 +13,7 @@ class _PickupRequestPageState extends State<PickupRequestPage> {
   final _formKey = GlobalKey<FormState>();
   final _quantityController = TextEditingController();
   final _addressController = TextEditingController();
+  final _phoneController = TextEditingController();
 
   String? _selectedWasteType;
   String? _selectedTimeSlot;
@@ -81,6 +82,7 @@ class _PickupRequestPageState extends State<PickupRequestPage> {
       await FirebaseFirestore.instance.collection('pickup_requests').add({
         'userId': user.uid,
         'userName': user.displayName ?? "Citizen",
+        'phone': _phoneController.text,
         'wasteType': _selectedWasteType,
         'quantity': _quantityController.text,
         'address': _addressController.text,
@@ -156,7 +158,7 @@ class _PickupRequestPageState extends State<PickupRequestPage> {
               ),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
-                value: _selectedWasteType,
+                initialValue: _selectedWasteType,
                 decoration: _inputDecoration(
                   "Select waste type",
                   Icons.category,
@@ -203,12 +205,30 @@ class _PickupRequestPageState extends State<PickupRequestPage> {
               const SizedBox(height: 20),
 
               const Text(
+                "Contact Phone",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _phoneController,
+                keyboardType: TextInputType.phone,
+                decoration: _inputDecoration(
+                  "Enter contact phone (required)",
+                  Icons.phone,
+                ),
+                validator: (val) => val == null || val.trim().isEmpty
+                    ? 'Please enter phone number'
+                    : null,
+              ),
+              const SizedBox(height: 20),
+
+              const Text(
                 "Preferred Time Slot",
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
-                value: _selectedTimeSlot,
+                initialValue: _selectedTimeSlot,
                 decoration: _inputDecoration(
                   "Select time slot",
                   Icons.access_time,
@@ -266,5 +286,13 @@ class _PickupRequestPageState extends State<PickupRequestPage> {
         borderSide: BorderSide.none,
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _quantityController.dispose();
+    _addressController.dispose();
+    _phoneController.dispose();
+    super.dispose();
   }
 }

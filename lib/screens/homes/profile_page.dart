@@ -60,18 +60,7 @@ class ProfilePage extends StatelessWidget {
                         ],
                       ),
 
-                    // Activity & Statistics - Only for citizens
-                    if (userRole == 'citizen')
-                      Column(
-                        children: [
-                          _profileSection(
-                            title: "Activity & Statistics",
-                            icon: Icons.trending_up,
-                            child: _activityStatsCard(user),
-                          ),
-                          const SizedBox(height: 24),
-                        ],
-                      ),
+                    // Activity & Statistics removed per request
 
                     // Actions & Settings
                     _profileSection(
@@ -294,98 +283,7 @@ class ProfilePage extends StatelessWidget {
   }
 
   // --- ACTIVITY STATS CARD ---
-  Widget _activityStatsCard(User? user) {
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('pickup_requests')
-          .where('riderId', isEqualTo: user?.uid)
-          .snapshots(),
-      builder: (context, snapshot) {
-        int allPickups = 0;
-        int completedPickups = 0;
-        int acceptedPickups = 0;
-
-        if (snapshot.hasData) {
-          allPickups = snapshot.data!.docs.length;
-          for (var doc in snapshot.data!.docs) {
-            final data = doc.data() as Map<String, dynamic>;
-            String status = data['status'] ?? '';
-            if (status == 'completed') {
-              completedPickups++;
-            } else if (status == 'accepted') {
-              acceptedPickups++;
-            }
-          }
-        }
-
-        return Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  _statCard("$allPickups", "Total Requests", Colors.blue),
-                  const SizedBox(width: 12),
-                  _statCard("$completedPickups", "Completed", Colors.green),
-                ],
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  _statCard("$acceptedPickups", "Accepted", Colors.orange),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.green.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Icon(Icons.verified, color: Colors.green, size: 20),
-                          const SizedBox(height: 8),
-                          const Text(
-                            "Yes",
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w900,
-                              color: Colors.green,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          const Text(
-                            "Verified",
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: Colors.green,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
+  // Activity stats removed — UI section deleted per request
 
   Widget _statCard(String value, String label, Color color) {
     return Expanded(
@@ -439,22 +337,16 @@ class ProfilePage extends StatelessWidget {
       ),
       child: Column(
         children: [
+          // Report option: user can submit a text report for admins
           _settingOption(
-            icon: Icons.help_outline,
-            title: "Help & Support",
-            subtitle: "FAQs and contact support",
-            color: Colors.blue,
-            onTap: () {},
+            icon: Icons.report_problem,
+            title: "Report an Issue",
+            subtitle: "Send a message to admin",
+            color: Colors.red.shade700,
+            onTap: () => _showReportDialog(context, user),
           ),
           Divider(height: 1, color: Colors.grey.shade200),
-          _settingOption(
-            icon: Icons.lock_outline,
-            title: "Change Password",
-            subtitle: "Update your password",
-            color: Colors.orange,
-            onTap: () {},
-          ),
-          Divider(height: 1, color: Colors.grey.shade200),
+          // Logout only
           _settingOption(
             icon: Icons.logout,
             title: "Logout",
@@ -468,6 +360,97 @@ class ProfilePage extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  void _showReportDialog(BuildContext context, User? user) {
+    final TextEditingController _reportController = TextEditingController();
+    bool _isSubmitting = false;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(builder: (context, setState) {
+          return AlertDialog(
+            title: const Text('Report an Issue'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: _reportController,
+                  maxLines: 4,
+                  decoration: const InputDecoration(
+                    hintText: 'Describe the issue or message to admin',
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: _isSubmitting
+                    ? null
+                    : () {
+                        Navigator.of(context).pop();
+                      },
+                child: const Text('Cancel'),
+              ),
+              ElevatedButton(
+                onPressed: _isSubmitting
+                    ? null
+                    : () async {
+                        final msg = _reportController.text.trim();
+                        if (msg.isEmpty) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Please enter a message')));
+                          return;
+                        }
+
+                        setState(() => _isSubmitting = true);
+
+                        try {
+                          // Fetch user info for name/role if available
+                          String role = '';
+                          String name = user?.displayName ?? '';
+                          if (user?.uid != null) {
+                            final doc = await FirebaseFirestore.instance.collection('users').doc(user!.uid).get();
+                            if (doc.exists) {
+                              final data = doc.data() as Map<String, dynamic>?;
+                              role = (data?['role'] ?? '').toString();
+                              name = name.isEmpty ? (data?['name'] ?? '') : name;
+                            }
+                          }
+
+                          await FirebaseFirestore.instance.collection('reports').add({
+                            'userId': user?.uid ?? 'unknown',
+                            'userName': name,
+                            'role': role,
+                            'message': msg,
+                            'status': 'open',
+                            'createdAt': FieldValue.serverTimestamp(),
+                          });
+
+                          if (context.mounted) {
+                            Navigator.of(context).pop();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Report submitted')));
+                          }
+                        } catch (e) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Error submitting report: $e')));
+                          }
+                        } finally {
+                          setState(() => _isSubmitting = false);
+                        }
+                      },
+                child: _isSubmitting
+                    ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                    : const Text('Submit'),
+              ),
+            ],
+          );
+        });
+      },
     );
   }
 

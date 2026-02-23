@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:trashtrack/services/auth_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AdminHome extends StatefulWidget {
   const AdminHome({super.key});
@@ -48,7 +49,7 @@ class _AdminHomeState extends State<AdminHome> with SingleTickerProviderStateMix
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
   }
 
   @override
@@ -81,6 +82,7 @@ class _AdminHomeState extends State<AdminHome> with SingleTickerProviderStateMix
           tabs: const [
             Tab(text: "📋 Pending Approvals"),
             Tab(text: "👥 All Users"),
+            Tab(text: "🚩 Reports"),
           ],
         ),
       ),
@@ -89,8 +91,127 @@ class _AdminHomeState extends State<AdminHome> with SingleTickerProviderStateMix
         children: [
           _pendingApprovalsTab(),
           _allUsersTab(),
+          _reportsTab(),
         ],
       ),
+    );
+  }
+
+  Widget _reportsTab() {
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('reports')
+          .orderBy('createdAt', descending: true)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (snapshot.hasError) {
+          return Center(child: Text('Error: ${snapshot.error}'));
+        }
+
+        final docs = snapshot.data?.docs ?? [];
+        if (docs.isEmpty) {
+          return const Center(child: Padding(
+            padding: EdgeInsets.all(20),
+            child: Text('No reports'),
+          ));
+        }
+
+        return ListView.builder(
+          padding: const EdgeInsets.all(12),
+          itemCount: docs.length,
+          itemBuilder: (context, index) {
+            final doc = docs[index];
+            final data = doc.data() as Map<String, dynamic>;
+            final message = data['message'] as String? ?? '';
+            final userName = data['userName'] as String? ?? 'Unknown';
+            final role = data['role'] as String? ?? '';
+            final status = data['status'] as String? ?? 'open';
+            final created = data['createdAt'];
+
+            String dateStr = '';
+            try {
+              if (created != null) {
+                final dt = (created as Timestamp).toDate();
+                dateStr = '${dt.day}/${dt.month}/${dt.year} ${dt.hour}:${dt.minute.toString().padLeft(2,'0')}';
+              }
+            } catch (_) {}
+
+            return Card(
+              margin: const EdgeInsets.only(bottom: 12),
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(userName, style: const TextStyle(fontWeight: FontWeight.bold)),
+                              const SizedBox(height: 4),
+                              Text(message),
+                            ],
+                          ),
+                        ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: status == 'open' ? Colors.orange : Colors.green,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(status.toUpperCase(), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(dateStr, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: status == 'resolved'
+                                ? null
+                                : () async {
+                                    await FirebaseFirestore.instance.collection('reports').doc(doc.id).update({'status': 'resolved'});
+                                    if (!mounted) return; showMsg('Report marked resolved', isError: false);
+                                  },
+                            style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                            child: const Text('Mark Resolved'),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () async {
+                              await FirebaseFirestore.instance.collection('reports').doc(doc.id).delete();
+                              if (!mounted) return; showMsg('Report deleted', isError: false);
+                            },
+                            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                            child: const Text('Delete'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
