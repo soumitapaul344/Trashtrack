@@ -285,42 +285,6 @@ class ProfilePage extends StatelessWidget {
   // --- ACTIVITY STATS CARD ---
   // Activity stats removed — UI section deleted per request
 
-  Widget _statCard(String value, String label, Color color) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(Icons.trending_up, color: color, size: 20),
-            const SizedBox(height: 8),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w900,
-                color: color,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 11,
-                color: color,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   // --- ACTIONS & SETTINGS CARD ---
   Widget _actionsSettingsCard(BuildContext context, User? user) {
     return Container(
@@ -370,86 +334,108 @@ class ProfilePage extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) {
-        return StatefulBuilder(builder: (context, setState) {
-          return AlertDialog(
-            title: const Text('Report an Issue'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: _reportController,
-                  maxLines: 4,
-                  decoration: const InputDecoration(
-                    hintText: 'Describe the issue or message to admin',
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Report an Issue'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: _reportController,
+                    maxLines: 4,
+                    decoration: const InputDecoration(
+                      hintText: 'Describe the issue or message to admin',
+                    ),
                   ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: _isSubmitting
+                      ? null
+                      : () {
+                          Navigator.of(context).pop();
+                        },
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  onPressed: _isSubmitting
+                      ? null
+                      : () async {
+                          final msg = _reportController.text.trim();
+                          if (msg.isEmpty) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Please enter a message'),
+                              ),
+                            );
+                            return;
+                          }
+
+                          setState(() => _isSubmitting = true);
+
+                          try {
+                            // Fetch user info for name/role if available
+                            String role = '';
+                            String name = user?.displayName ?? '';
+                            if (user?.uid != null) {
+                              final doc = await FirebaseFirestore.instance
+                                  .collection('users')
+                                  .doc(user!.uid)
+                                  .get();
+                              if (doc.exists) {
+                                final data = doc.data();
+                                role = (data?['role'] ?? '').toString();
+                                name = name.isEmpty
+                                    ? (data?['name'] ?? '')
+                                    : name;
+                              }
+                            }
+
+                            await FirebaseFirestore.instance
+                                .collection('reports')
+                                .add({
+                                  'userId': user?.uid ?? 'unknown',
+                                  'userName': name,
+                                  'role': role,
+                                  'message': msg,
+                                  'status': 'open',
+                                  'createdAt': FieldValue.serverTimestamp(),
+                                });
+
+                            if (context.mounted) {
+                              Navigator.of(context).pop();
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Report submitted'),
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Error submitting report: $e'),
+                                ),
+                              );
+                            }
+                          } finally {
+                            setState(() => _isSubmitting = false);
+                          }
+                        },
+                  child: _isSubmitting
+                      ? const SizedBox(
+                          height: 16,
+                          width: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('Submit'),
                 ),
               ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: _isSubmitting
-                    ? null
-                    : () {
-                        Navigator.of(context).pop();
-                      },
-                child: const Text('Cancel'),
-              ),
-              ElevatedButton(
-                onPressed: _isSubmitting
-                    ? null
-                    : () async {
-                        final msg = _reportController.text.trim();
-                        if (msg.isEmpty) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text('Please enter a message')));
-                          return;
-                        }
-
-                        setState(() => _isSubmitting = true);
-
-                        try {
-                          // Fetch user info for name/role if available
-                          String role = '';
-                          String name = user?.displayName ?? '';
-                          if (user?.uid != null) {
-                            final doc = await FirebaseFirestore.instance.collection('users').doc(user!.uid).get();
-                            if (doc.exists) {
-                              final data = doc.data() as Map<String, dynamic>?;
-                              role = (data?['role'] ?? '').toString();
-                              name = name.isEmpty ? (data?['name'] ?? '') : name;
-                            }
-                          }
-
-                          await FirebaseFirestore.instance.collection('reports').add({
-                            'userId': user?.uid ?? 'unknown',
-                            'userName': name,
-                            'role': role,
-                            'message': msg,
-                            'status': 'open',
-                            'createdAt': FieldValue.serverTimestamp(),
-                          });
-
-                          if (context.mounted) {
-                            Navigator.of(context).pop();
-                            ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('Report submitted')));
-                          }
-                        } catch (e) {
-                          if (context.mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('Error submitting report: $e')));
-                          }
-                        } finally {
-                          setState(() => _isSubmitting = false);
-                        }
-                      },
-                child: _isSubmitting
-                    ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                    : const Text('Submit'),
-              ),
-            ],
-          );
-        });
+            );
+          },
+        );
       },
     );
   }

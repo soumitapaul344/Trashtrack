@@ -47,8 +47,6 @@ class _RiderHomeState extends State<RiderHome> {
 
   // ================= HOME PAGE =================
   Widget _buildHome() {
-    final user = FirebaseAuth.instance.currentUser;
-
     return SingleChildScrollView(
       child: Column(
         children: [
@@ -216,9 +214,9 @@ class _RiderHomeState extends State<RiderHome> {
               child: _summaryCard("Pickups", pickups.toString(), Colors.green),
             ),
             const SizedBox(width: 12),
-              Expanded(
-                child: _summaryCard("Earnings", "৳$earnings", Colors.orange),
-              ),
+            Expanded(
+              child: _summaryCard("Earnings", "৳$earnings", Colors.orange),
+            ),
           ],
         );
       },
@@ -546,7 +544,10 @@ class _RiderHomeState extends State<RiderHome> {
   // Dial helper: open phone dialer when rider taps the provided number
   Future<void> _dialPhone(String phone) async {
     if (phone.trim().isEmpty || phone == 'Not available') {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Phone not available")));
+      if (mounted)
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text("Phone not available")));
       return;
     }
 
@@ -555,10 +556,16 @@ class _RiderHomeState extends State<RiderHome> {
       if (await canLaunchUrl(uri)) {
         await launchUrl(uri);
       } else {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Cannot open dialer")));
+        if (mounted)
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text("Cannot open dialer")));
       }
     } catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $e")));
+      if (mounted)
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Error: $e")));
     }
   }
 
@@ -685,10 +692,10 @@ class _RiderHomeState extends State<RiderHome> {
   Widget _buildHistoryCard(Map<String, dynamic> req, String docId) {
     String wasteType = req['wasteType'] ?? "Unknown";
     String address = req['address'] ?? "";
-    String weight = req['weight'] ?? "0";
-    int earnings = req['earnings'] ?? 0;
+    String weight = req['quantity'] ?? "0";
     String status = req['status'] ?? 'accepted';
-    String phoneText = (req['phone'] ?? req['contact'] ?? 'Not available').toString();
+    String phoneText = (req['phone'] ?? req['contact'] ?? 'Not available')
+        .toString();
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -732,7 +739,7 @@ class _RiderHomeState extends State<RiderHome> {
                   ),
                 ],
               ),
-                if (status == 'completed')
+              if (status == 'completed')
                 const Text(
                   "৳50",
                   style: TextStyle(
@@ -776,18 +783,27 @@ class _RiderHomeState extends State<RiderHome> {
                   // Display citizen phone number provided in the pickup request
                   Expanded(
                     child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 10,
+                        horizontal: 12,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.green,
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: InkWell(
-                        onTap: phoneText == 'Not available' ? null : () => _dialPhone(phoneText),
+                        onTap: phoneText == 'Not available'
+                            ? null
+                            : () => _dialPhone(phoneText),
                         borderRadius: BorderRadius.circular(6),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Icon(Icons.phone, size: 14, color: Colors.white),
+                            const Icon(
+                              Icons.phone,
+                              size: 14,
+                              color: Colors.white,
+                            ),
                             const SizedBox(width: 6),
                             Flexible(
                               child: Text(
@@ -1039,7 +1055,6 @@ class _RiderHomeState extends State<RiderHome> {
           .snapshots(),
       builder: (context, snapshot) {
         int totalPickups = 0;
-        int totalEarnings = 0;
 
         if (snapshot.hasData) {
           // Count only completed pickups
@@ -1050,7 +1065,6 @@ class _RiderHomeState extends State<RiderHome> {
           }).toList();
 
           totalPickups = completedDocs.length;
-          totalEarnings = totalPickups * 50; // 50 per pickup
         }
 
         return Container(

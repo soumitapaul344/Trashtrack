@@ -13,7 +13,6 @@ class _PickupRequestPageState extends State<PickupRequestPage> {
   final _formKey = GlobalKey<FormState>();
   final _quantityController = TextEditingController();
   final _addressController = TextEditingController();
-  final _phoneController = TextEditingController();
 
   String? _selectedWasteType;
   String? _selectedTimeSlot;
@@ -78,14 +77,18 @@ class _PickupRequestPageState extends State<PickupRequestPage> {
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) return;
 
+      // Ensure quantity is never empty
+      final quantity = _quantityController.text.trim().isEmpty
+          ? "Not specified"
+          : _quantityController.text.trim();
+
       // Save request in Firestore (all riders can see)
       await FirebaseFirestore.instance.collection('pickup_requests').add({
         'userId': user.uid,
         'userName': user.displayName ?? "Citizen",
-        'phone': _phoneController.text,
         'wasteType': _selectedWasteType,
-        'quantity': _quantityController.text,
-        'address': _addressController.text,
+        'quantity': quantity,
+        'address': _addressController.text.trim(),
         'timeSlot': _selectedTimeSlot,
         'status': 'pending',
         'riderId': null,
@@ -205,24 +208,6 @@ class _PickupRequestPageState extends State<PickupRequestPage> {
               const SizedBox(height: 20),
 
               const Text(
-                "Contact Phone",
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _phoneController,
-                keyboardType: TextInputType.phone,
-                decoration: _inputDecoration(
-                  "Enter contact phone (required)",
-                  Icons.phone,
-                ),
-                validator: (val) => val == null || val.trim().isEmpty
-                    ? 'Please enter phone number'
-                    : null,
-              ),
-              const SizedBox(height: 20),
-
-              const Text(
                 "Preferred Time Slot",
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
@@ -286,13 +271,5 @@ class _PickupRequestPageState extends State<PickupRequestPage> {
         borderSide: BorderSide.none,
       ),
     );
-  }
-
-  @override
-  void dispose() {
-    _quantityController.dispose();
-    _addressController.dispose();
-    _phoneController.dispose();
-    super.dispose();
   }
 }

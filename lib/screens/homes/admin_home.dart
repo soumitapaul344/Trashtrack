@@ -10,7 +10,8 @@ class AdminHome extends StatefulWidget {
   State<AdminHome> createState() => _AdminHomeState();
 }
 
-class _AdminHomeState extends State<AdminHome> with SingleTickerProviderStateMixin {
+class _AdminHomeState extends State<AdminHome>
+    with SingleTickerProviderStateMixin {
   final auth = AuthService();
   late TabController _tabController;
 
@@ -88,11 +89,7 @@ class _AdminHomeState extends State<AdminHome> with SingleTickerProviderStateMix
       ),
       body: TabBarView(
         controller: _tabController,
-        children: [
-          _pendingApprovalsTab(),
-          _allUsersTab(),
-          _reportsTab(),
-        ],
+        children: [_pendingApprovalsTab(), _allUsersTab(), _reportsTab()],
       ),
     );
   }
@@ -114,10 +111,12 @@ class _AdminHomeState extends State<AdminHome> with SingleTickerProviderStateMix
 
         final docs = snapshot.data?.docs ?? [];
         if (docs.isEmpty) {
-          return const Center(child: Padding(
-            padding: EdgeInsets.all(20),
-            child: Text('No reports'),
-          ));
+          return const Center(
+            child: Padding(
+              padding: EdgeInsets.all(20),
+              child: Text('No reports'),
+            ),
+          );
         }
 
         return ListView.builder(
@@ -128,7 +127,7 @@ class _AdminHomeState extends State<AdminHome> with SingleTickerProviderStateMix
             final data = doc.data() as Map<String, dynamic>;
             final message = data['message'] as String? ?? '';
             final userName = data['userName'] as String? ?? 'Unknown';
-            final role = data['role'] as String? ?? '';
+            // User role is available in data
             final status = data['status'] as String? ?? 'open';
             final created = data['createdAt'];
 
@@ -136,7 +135,8 @@ class _AdminHomeState extends State<AdminHome> with SingleTickerProviderStateMix
             try {
               if (created != null) {
                 final dt = (created as Timestamp).toDate();
-                dateStr = '${dt.day}/${dt.month}/${dt.year} ${dt.hour}:${dt.minute.toString().padLeft(2,'0')}';
+                dateStr =
+                    '${dt.day}/${dt.month}/${dt.year} ${dt.hour}:${dt.minute.toString().padLeft(2, '0')}';
               }
             } catch (_) {}
 
@@ -154,7 +154,12 @@ class _AdminHomeState extends State<AdminHome> with SingleTickerProviderStateMix
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(userName, style: const TextStyle(fontWeight: FontWeight.bold)),
+                              Text(
+                                userName,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                               const SizedBox(height: 4),
                               Text(message),
                             ],
@@ -164,15 +169,32 @@ class _AdminHomeState extends State<AdminHome> with SingleTickerProviderStateMix
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
                               decoration: BoxDecoration(
-                                color: status == 'open' ? Colors.orange : Colors.green,
+                                color: status == 'open'
+                                    ? Colors.orange
+                                    : Colors.green,
                                 borderRadius: BorderRadius.circular(6),
                               ),
-                              child: Text(status.toUpperCase(), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                              child: Text(
+                                status.toUpperCase(),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             ),
                             const SizedBox(height: 6),
-                            Text(dateStr, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                            Text(
+                              dateStr,
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey,
+                              ),
+                            ),
                           ],
                         ),
                       ],
@@ -185,10 +207,19 @@ class _AdminHomeState extends State<AdminHome> with SingleTickerProviderStateMix
                             onPressed: status == 'resolved'
                                 ? null
                                 : () async {
-                                    await FirebaseFirestore.instance.collection('reports').doc(doc.id).update({'status': 'resolved'});
-                                    if (!mounted) return; showMsg('Report marked resolved', isError: false);
+                                    await FirebaseFirestore.instance
+                                        .collection('reports')
+                                        .doc(doc.id)
+                                        .update({'status': 'resolved'});
+                                    if (!mounted) return;
+                                    showMsg(
+                                      'Report marked resolved',
+                                      isError: false,
+                                    );
                                   },
-                            style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green,
+                            ),
                             child: const Text('Mark Resolved'),
                           ),
                         ),
@@ -196,10 +227,16 @@ class _AdminHomeState extends State<AdminHome> with SingleTickerProviderStateMix
                         Expanded(
                           child: ElevatedButton(
                             onPressed: () async {
-                              await FirebaseFirestore.instance.collection('reports').doc(doc.id).delete();
-                              if (!mounted) return; showMsg('Report deleted', isError: false);
+                              await FirebaseFirestore.instance
+                                  .collection('reports')
+                                  .doc(doc.id)
+                                  .delete();
+                              if (!mounted) return;
+                              showMsg('Report deleted', isError: false);
                             },
-                            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.red,
+                            ),
                             child: const Text('Delete'),
                           ),
                         ),
@@ -284,9 +321,14 @@ class _AdminHomeState extends State<AdminHome> with SingleTickerProviderStateMix
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
-                            color: role == 'rider' ? Colors.orange : Colors.purple,
+                            color: role == 'rider'
+                                ? Colors.orange
+                                : Colors.purple,
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
@@ -310,7 +352,9 @@ class _AdminHomeState extends State<AdminHome> with SingleTickerProviderStateMix
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          verified ? "Email Verified" : "Email Verification Pending",
+                          verified
+                              ? "Email Verified"
+                              : "Email Verification Pending",
                           style: TextStyle(
                             fontSize: 12,
                             color: verified ? Colors.green : Colors.orange,
@@ -323,7 +367,8 @@ class _AdminHomeState extends State<AdminHome> with SingleTickerProviderStateMix
                       children: [
                         Expanded(
                           child: ElevatedButton(
-                            onPressed: () => approveUser(docId, collection: collection),
+                            onPressed: () =>
+                                approveUser(docId, collection: collection),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.green,
                             ),
@@ -333,7 +378,8 @@ class _AdminHomeState extends State<AdminHome> with SingleTickerProviderStateMix
                         const SizedBox(width: 12),
                         Expanded(
                           child: ElevatedButton(
-                            onPressed: () => rejectUser(docId, collection: collection),
+                            onPressed: () =>
+                                rejectUser(docId, collection: collection),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.red,
                             ),
@@ -405,7 +451,10 @@ class _AdminHomeState extends State<AdminHome> with SingleTickerProviderStateMix
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: roleColor,
                         borderRadius: BorderRadius.circular(6),
