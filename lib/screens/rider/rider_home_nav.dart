@@ -26,11 +26,6 @@ extension RiderNavSection on _RiderHomeState {
           label: "Earnings",
         ),
         BottomNavigationBarItem(
-          icon: Icon(Icons.location_on_outlined),
-          activeIcon: Icon(Icons.location_on),
-          label: "Track",
-        ),
-        BottomNavigationBarItem(
           icon: Icon(Icons.person_outline),
           activeIcon: Icon(Icons.person),
           label: "Profile",

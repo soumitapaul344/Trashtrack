@@ -153,28 +153,29 @@ extension RiderHomeSection on _RiderHomeState {
                   pickups++;
                 }
 
-                        // Count earnings if completed today — use completedAt if available
-                        if (status == 'completed') {
-                          DateTime? completedDateTime;
-                          if (data['completedAt'] != null) {
-                            try {
-                              completedDateTime = (data['completedAt'] as Timestamp).toDate();
-                            } catch (e) {
-                              completedDateTime = null;
-                            }
-                          }
+                // Count earnings if completed today — use completedAt if available
+                if (status == 'completed') {
+                  DateTime? completedDateTime;
+                  if (data['completedAt'] != null) {
+                    try {
+                      completedDateTime = (data['completedAt'] as Timestamp)
+                          .toDate();
+                    } catch (e) {
+                      completedDateTime = null;
+                    }
+                  }
 
-                          final usedDate = completedDateTime ?? createdDate;
-                          final usedDay = DateTime(
-                            usedDate.year,
-                            usedDate.month,
-                            usedDate.day,
-                          );
+                  final usedDate = completedDateTime ?? createdDate;
+                  final usedDay = DateTime(
+                    usedDate.year,
+                    usedDate.month,
+                    usedDate.day,
+                  );
 
-                          if (usedDay == today) {
-                            earnings += 50;
-                          }
-                        }
+                  if (usedDay == today) {
+                    earnings += 50;
+                  }
+                }
               } catch (e) {
                 // Skip if date parsing fails
               }
@@ -433,137 +434,126 @@ extension RiderHomeSection on _RiderHomeState {
               ),
             )
           else if (status == 'accepted')
-            // Show both Map button and Mark as Done button in a row
-            Row(
-              children: [
-                // Map tracking button
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      final citizenId = req['userId'] as String?;
-                      if (citizenId != null) {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => RiderTrackingPage(citizenId: citizenId),
+            // Show Call, Picked Up, and Mark as Done buttons
+            FutureBuilder<DocumentSnapshot>(
+              future: FirebaseFirestore.instance
+                  .collection('users')
+                  .doc(req['userId'] as String?)
+                  .get(),
+              builder: (context, snap) {
+                String phone = '';
+                if (snap.hasData && snap.data!.exists) {
+                  final d = snap.data!.data() as Map<String, dynamic>?;
+                  phone = d?['phone'] ?? '';
+                }
+
+                return Row(
+                  children: [
+                    // Call button
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: phone.isEmpty
+                            ? null
+                            : () async {
+                                final uri = Uri.parse('tel:$phone');
+                                try {
+                                  if (await canLaunchUrl(uri)) {
+                                    await launchUrl(uri);
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Cannot place call'),
+                                      ),
+                                    );
+                                  }
+                                } catch (e) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Unable to call'),
+                                    ),
+                                  );
+                                }
+                              },
+                        icon: const Icon(Icons.call),
+                        label: Text(phone.isEmpty ? 'No Phone' : phone),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
                           ),
-                        );
-                      }
-                    },
-                    icon: const Icon(Icons.map),
-                    label: const Text('Track'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.orangeAccent,
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
+                        ),
                       ),
                     ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                // Call and Mark as Done buttons
-                // Fetch citizen phone from users collection
-                FutureBuilder<DocumentSnapshot>(
-                  future: FirebaseFirestore.instance
-                      .collection('users')
-                      .doc(req['userId'] as String?)
-                      .get(),
-                  builder: (context, snap) {
-                    String phone = '';
-                    if (snap.hasData && snap.data!.exists) {
-                      final d = snap.data!.data() as Map<String, dynamic>?;
-                      phone = d?['phone'] ?? '';
-                    }
-
-                    return Expanded(
-                      child: Row(
-                        children: [
-                          // Call button
-                          Expanded(
-                            child: ElevatedButton.icon(
-                              onPressed: phone.isEmpty
-                                  ? null
-                                  : () async {
-                                      final uri = Uri.parse('tel:$phone');
-                                      try {
-                                        if (await canLaunchUrl(uri)) {
-                                          await launchUrl(uri);
-                                        } else {
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            const SnackBar(content: Text('Cannot place call')),
-                                          );
-                                        }
-                                      } catch (e) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          const SnackBar(content: Text('Unable to call')),
-                                        );
-                                      }
-                                    },
-                              icon: const Icon(Icons.call),
-                              label: Text(phone.isEmpty ? 'No Phone' : phone),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.green,
-                                padding: const EdgeInsets.symmetric(vertical: 10),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                            ),
+                    const SizedBox(width: 8),
+                    // Picked Up button
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed:
+                            (req['riderId'] == userId &&
+                                !(req['pickedUp'] as bool? ?? false))
+                            ? () async {
+                                await FirebaseFirestore.instance
+                                    .collection('pickup_requests')
+                                    .doc(docId)
+                                    .update({
+                                      'pickedUp': true,
+                                      'pickedUpAt':
+                                          FieldValue.serverTimestamp(),
+                                    });
+                                if (context.mounted)
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Marked as picked up'),
+                                    ),
+                                  );
+                              }
+                            : null,
+                        icon: const Icon(Icons.inventory),
+                        label: Text(
+                          (req['pickedUp'] as bool? ?? false)
+                              ? 'Picked'
+                              : 'Picked Up',
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.teal,
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
                           ),
-                          const SizedBox(width: 8),
-                          // Picked Up button (rider taps when they have picked the waste)
-                          Expanded(
-                            child: ElevatedButton.icon(
-                              onPressed: (req['riderId'] == userId && !(req['pickedUp'] as bool? ?? false))
-                                  ? () async {
-                                      await FirebaseFirestore.instance.collection('pickup_requests').doc(docId).update({
-                                        'pickedUp': true,
-                                        'pickedUpAt': FieldValue.serverTimestamp(),
-                                      });
-                                      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Marked as picked up')));
-                                    }
-                                  : null,
-                              icon: const Icon(Icons.inventory),
-                              label: Text((req['pickedUp'] as bool? ?? false) ? 'Picked' : 'Picked Up'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.teal,
-                                padding: const EdgeInsets.symmetric(vertical: 10),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          // Mark as Done button - enabled only after citizen confirms
-                          Expanded(
-                            child: ElevatedButton(
-                              onPressed: (req['riderId'] == userId && (req['citizenConfirmed'] as bool? ?? false))
-                                  ? () => _markAsDone(docId)
-                                  : null,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.blue,
-                                padding: const EdgeInsets.symmetric(vertical: 10),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              child: Text(
-                                (req['citizenConfirmed'] as bool? ?? false) ? 'Mark as Done' : 'Awaiting Confirm',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
-                    );
-                  },
-                ),
-              ],
+                    ),
+                    const SizedBox(width: 8),
+                    // Mark as Done button
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed:
+                            (req['riderId'] == userId &&
+                                (req['citizenConfirmed'] as bool? ?? false))
+                            ? () => _markAsDone(docId)
+                            : null,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue,
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: Text(
+                          (req['citizenConfirmed'] as bool? ?? false)
+                              ? 'Mark as Done'
+                              : 'Awaiting Confirm',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
         ],
       ),
@@ -605,7 +595,9 @@ extension RiderHomeSection on _RiderHomeState {
     if (user == null) return;
 
     // Fetch pickup doc to get citizen id and phone, then update
-    final docRef = FirebaseFirestore.instance.collection('pickup_requests').doc(docId);
+    final docRef = FirebaseFirestore.instance
+        .collection('pickup_requests')
+        .doc(docId);
     final docSnap = await docRef.get();
     String? citizenId;
     if (docSnap.exists) {
@@ -615,7 +607,10 @@ extension RiderHomeSection on _RiderHomeState {
 
     String citizenPhone = '';
     if (citizenId != null && citizenId.isNotEmpty) {
-      final citizenDoc = await FirebaseFirestore.instance.collection('users').doc(citizenId).get();
+      final citizenDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(citizenId)
+          .get();
       if (citizenDoc.exists) {
         final d = citizenDoc.data() as Map<String, dynamic>?;
         citizenPhone = d?['phone'] ?? '';
@@ -631,20 +626,28 @@ extension RiderHomeSection on _RiderHomeState {
     });
 
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Pickup request accepted!")));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Pickup request accepted!")));
     }
   }
 
   Future<void> _markAsDone(String docId) async {
     // Ensure citizen has confirmed before allowing completion
-    final docRef = FirebaseFirestore.instance.collection('pickup_requests').doc(docId);
+    final docRef = FirebaseFirestore.instance
+        .collection('pickup_requests')
+        .doc(docId);
     final snap = await docRef.get();
     if (!snap.exists) return;
     final data = snap.data() as Map<String, dynamic>;
     final citizenConfirmed = data['citizenConfirmed'] as bool? ?? false;
     if (!citizenConfirmed) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Citizen must confirm before marking as done.")));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text("Citizen must confirm before marking as done."),
+          ),
+        );
       }
       return;
     }
@@ -657,7 +660,9 @@ extension RiderHomeSection on _RiderHomeState {
     });
 
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Marked as completed!")));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Marked as completed!")));
     }
   }
 }

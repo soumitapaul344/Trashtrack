@@ -4,9 +4,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:trashtrack/screens/citizen/pickup_request_page.dart';
 import 'package:trashtrack/screens/citizen/request_list_page.dart';
 import 'package:trashtrack/screens/homes/profile_page.dart';
-import 'package:trashtrack/screens/citizen/services/citizen_location_service.dart';
-import 'package:trashtrack/screens/citizen/citizen_tracking_content.dart';
-import 'package:trashtrack/screens/citizen/citizen_tracking_page.dart';
 
 class CitizenHomePage extends StatefulWidget {
   const CitizenHomePage({super.key});
@@ -17,28 +14,10 @@ class CitizenHomePage extends StatefulWidget {
 
 class _CitizenHomePageState extends State<CitizenHomePage> {
   int _currentIndex = 0;
-  late final CitizenLocationService _locationService;
 
   // Theme Constants (matching Rider & App Theme)
   final Color primaryGreen = const Color(0xFF138D75);
   final Color scaffoldBg = const Color(0xFFF4F9F9);
-
-  @override
-  void initState() {
-    super.initState();
-    _locationService = CitizenLocationService();
-    // Start location tracking when citizen home loads
-    final user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      _locationService.startLocationUpdates(citizenId: user.uid);
-    }
-  }
-
-  @override
-  void dispose() {
-    _locationService.stopLocationUpdates();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -165,11 +144,6 @@ class _CitizenHomePageState extends State<CitizenHomePage> {
 
           // Status Summary Section
           _buildStatusSummary(),
-
-          const SizedBox(height: 30),
-
-          // Live Rider Tracking Card (Collapsible)
-          _buildTrackingCard(),
 
           const SizedBox(height: 30),
 
@@ -311,95 +285,6 @@ class _CitizenHomePageState extends State<CitizenHomePage> {
         builder: (context) =>
             RequestListPage(title: title, userId: uid, statusFilter: status),
       ),
-    );
-  }
-
-  // Tracking Card (Collapsible) with Map Button
-  Widget _buildTrackingCard() {
-    final user = FirebaseAuth.instance.currentUser;
-
-    return StreamBuilder<QuerySnapshot>(
-      // Check for active pickup request with accepted rider
-      stream: FirebaseFirestore.instance
-          .collection('pickup_requests')
-          .where('userId', isEqualTo: user?.uid)
-          .where('status', isEqualTo: 'accepted')
-          .limit(1)
-          .snapshots(),
-      builder: (context, snapshot) {
-        // Extract riderId from active pickup request
-        String? riderId;
-        if (snapshot.hasData && snapshot.data!.docs.isNotEmpty) {
-          final data = snapshot.data!.docs.first.data() as Map<String, dynamic>;
-          riderId = data['riderId'] as String?;
-        }
-
-        return Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: primaryGreen.withValues(alpha: 0.2)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
-            ],
-          ),
-          child: ExpansionTile(
-            title: Row(
-              children: [
-                Icon(Icons.location_on, color: primaryGreen, size: 22),
-                const SizedBox(width: 12),
-                const Text(
-                  'Live Rider Tracking',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-              ],
-            ),
-            // Map icon button in trailing position
-            trailing: (riderId != null)
-                ? Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      // Full-screen map button
-                      IconButton(
-                        icon: Icon(Icons.map, color: primaryGreen, size: 24),
-                        onPressed: () {
-                          // Navigate to full-screen tracking page
-                          if (riderId != null) {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    CitizenTrackingPage(riderId: riderId!),
-                              ),
-                            );
-                          }
-                        },
-                        tooltip: 'View full map',
-                      ),
-                      // Expansion arrow
-                      const Icon(Icons.expand_more),
-                    ],
-                  )
-                : null,
-            onExpansionChanged: (expanded) {
-              // Expansion state changed
-            },
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16),
-                child: CitizenTrackingContent.buildTracking(
-                  context,
-                  primaryGreen,
-                ),
-              ),
-            ],
-          ),
-        );
-      },
     );
   }
 

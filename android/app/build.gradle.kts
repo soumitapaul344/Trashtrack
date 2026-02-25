@@ -1,6 +1,12 @@
+plugins {
+    id("com.android.application")
+    id("kotlin-android")
+    id("dev.flutter.flutter-gradle-plugin")
+}
+
 android {
     namespace = "com.example.trashtrack"
-    compileSdk = 36   // <- এখানে 36 দিন
+    compileSdk = 35
     ndkVersion = "27.0.12077973"
 
     compileOptions {
@@ -9,17 +15,17 @@ android {
     }
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_11.toString()
+        jvmTarget = "11"
     }
 
     defaultConfig {
         applicationId = "com.example.trashtrack"
-        minSdk = 23
-        targetSdk = 36   // <- optional, targetSdk 36 recommended
+
+        minSdkVersion(23)
+        targetSdkVersion(34)
+
         versionCode = 1
         versionName = "1.0"
-
-        manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey
     }
 
     buildTypes {
@@ -27,4 +33,8 @@ android {
             signingConfig = signingConfigs.getByName("debug")
         }
     }
+}
+
+flutter {
+    source = "../.."
 }
