@@ -13,6 +13,7 @@ class _PickupRequestPageState extends State<PickupRequestPage> {
   final _formKey = GlobalKey<FormState>();
   final _quantityController = TextEditingController();
   final _addressController = TextEditingController();
+  final _phoneController = TextEditingController();
 
   String? _selectedWasteType;
   String? _selectedTimeSlot;
@@ -86,6 +87,7 @@ class _PickupRequestPageState extends State<PickupRequestPage> {
       await FirebaseFirestore.instance.collection('pickup_requests').add({
         'userId': user.uid,
         'userName': user.displayName ?? "Citizen",
+        'phone': _phoneController.text.trim(),
         'wasteType': _selectedWasteType,
         'quantity': quantity,
         'address': _addressController.text.trim(),
@@ -173,7 +175,27 @@ class _PickupRequestPageState extends State<PickupRequestPage> {
                 validator: (val) => val == null ? 'Please select a type' : null,
               ),
               const SizedBox(height: 20),
-
+              const Text(
+                "Contact Phone",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _phoneController,
+                keyboardType: TextInputType.phone,
+                decoration: _inputDecoration(
+                  "Enter contact phone (required)",
+                  Icons.phone,
+                ),
+                validator: (val) {
+                  if (val == null || val.trim().isEmpty) return 'Please enter phone number';
+                  final cleaned = val.replaceAll(RegExp(r'[\s\-()]'), '');
+                  final regex = RegExp(r'^\+?\d{10,15}$');
+                  if (!regex.hasMatch(cleaned)) return 'Enter a valid phone number';
+                  return null;
+                },
+              ),
+              const SizedBox(height: 20),
               const Text(
                 "Quantity / Notes",
                 style: TextStyle(fontWeight: FontWeight.bold),

@@ -536,8 +536,7 @@ class _CitizenHomePageState extends State<CitizenHomePage> {
           itemBuilder: (context, index) {
             final doc = docs[index];
             final req = doc.data() as Map<String, dynamic>;
-            bool isCompleted =
-                req['status'] == 'completed' || req['status'] == 'accepted';
+            bool isCompleted = req['status'] == 'completed';
 
             // Format timestamp if available
             String dateStr = "Recently";

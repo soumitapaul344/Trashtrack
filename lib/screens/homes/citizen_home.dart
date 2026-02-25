@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:trashtrack/screens/pickup_request_page.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:trashtrack/screens/homes/request_list_page.dart';
 import 'package:trashtrack/screens/homes/profile_page.dart';
 
@@ -45,7 +46,9 @@ class _CitizenHomePageState extends State<CitizenHomePage> {
           StreamBuilder<QuerySnapshot>(
             stream: FirebaseFirestore.instance
                 .collection('pickup_requests')
-                .where('userId', isEqualTo: user.uid)
+                .where('userId', isEqualTo: user?.uid)
+                .where('status', isEqualTo: 'accepted')
+                .limit(1)
                 .snapshots(),
             builder: (context, snapshot) {
               int pendingCount = 0;
@@ -444,64 +447,111 @@ class _CitizenHomePageState extends State<CitizenHomePage> {
                   ),
                 ],
               ),
-              child: ListTile(
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
-                leading: Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: primaryGreen.withValues(alpha: 0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(Icons.recycling, color: primaryGreen),
-                ),
-                title: Text(
-                  req['wasteType'] ?? "Unknown Type",
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
-                  ),
-                ),
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 4),
-                    Text(
-                      req['address'] ?? "",
-                      style: const TextStyle(fontSize: 12),
+              child: Column(
+                children: [
+                  ListTile(
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      dateStr,
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Colors.grey.shade400,
+                    leading: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: primaryGreen.withValues(alpha: 0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(Icons.recycling, color: primaryGreen),
+                    ),
+                    title: Text(
+                      req['wasteType'] ?? "Unknown Type",
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
                       ),
                     ),
-                  ],
-                ),
-                trailing: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 5,
-                  ),
-                  decoration: BoxDecoration(
-                    color: isCompleted
-                        ? Colors.green.withValues(alpha: 0.1)
-                        : Colors.orange.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    (req['status'] ?? "Pending").toString().toUpperCase(),
-                    style: TextStyle(
-                      color: isCompleted ? Colors.green : Colors.orange,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 4),
+                        Text(
+                          req['address'] ?? "",
+                          style: const TextStyle(fontSize: 12),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          dateStr,
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey.shade400,
+                          ),
+                        ),
+                      ],
+                    ),
+                    trailing: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isCompleted
+                            ? Colors.green.withValues(alpha: 0.1)
+                            : Colors.orange.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        (req['status'] ?? "Pending").toString().toUpperCase(),
+                        style: TextStyle(
+                          color: isCompleted ? Colors.green : Colors.orange,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
                     ),
                   ),
-                ),
+                  if ((req['status'] ?? '') == 'accepted')
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: (req['riderPhone'] ?? '').toString().trim().isEmpty
+                                  ? null
+                                  : () async {
+                                      final phone = (req['riderPhone'] ?? '').toString();
+                                      final uri = Uri.parse('tel:$phone');
+                                      try {
+                                        await launchUrl(uri);
+                                      } catch (e) {
+                                        if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Unable to place call')));
+                                      }
+                                    },
+                              icon: const Icon(Icons.call),
+                              label: Text((req['riderPhone'] ?? 'Call Rider').toString()),
+                              style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: (req['pickedUp'] as bool? ?? false) && !(req['citizenConfirmed'] as bool? ?? false)
+                                  ? () async {
+                                      await FirebaseFirestore.instance.collection('pickup_requests').doc(doc.id).update({
+                                        'citizenConfirmed': true,
+                                        'citizenConfirmedAt': FieldValue.serverTimestamp(),
+                                      });
+                                      if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Waste pickup confirmed.')));
+                                    }
+                                  : null,
+                              child: Text((req['citizenConfirmed'] as bool? ?? false)
+                                  ? 'Confirmed'
+                                  : ((req['pickedUp'] as bool? ?? false) ? 'Waste Picked Up' : 'Waiting for pickup')),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
               ),
             );
           },

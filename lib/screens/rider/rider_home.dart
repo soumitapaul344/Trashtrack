@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:trashtrack/screens/homes/profile_page.dart';
 import 'package:trashtrack/screens/rider/services/rider_location_service.dart';
 import 'package:trashtrack/screens/rider/rider_tracking_page.dart';
@@ -29,6 +30,15 @@ class _RiderHomeState extends State<RiderHome> {
 
   int _currentIndex = 0;
   int _historyTabIndex = 0;
+
+  // Helpers to safely update state from extension methods
+  void _changeIndex(int index) {
+    setState(() => _currentIndex = index);
+  }
+
+  void _changeHistoryTab(int index) {
+    setState(() => _historyTabIndex = index);
+  }
 
   @override
   void initState() {

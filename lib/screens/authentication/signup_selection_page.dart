@@ -68,16 +68,7 @@ class SignupSelectionPage extends StatelessWidget {
               ),
               const SizedBox(height: 15),
 
-              // Cleaner Signup (same green color)
-              _signupButton(
-                context,
-                "🧹 Register as Cleaner",
-                const Color(0xFF138D75),
-                () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const CleanerSignupPage()),
-                ),
-              ),
+              // Cleaner Signup removed per request
               const SizedBox(height: 30),
 
               // Back to Login

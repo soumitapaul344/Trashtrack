@@ -4,8 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class RequestListPage extends StatelessWidget {
   final String title;
   final String userId;
-  final String?
-  statusFilter; // 'pending', 'completed', 'accepted', or null for all
+  final String? statusFilter; // 'pending', 'completed', 'accepted', or null for all
 
   const RequestListPage({
     super.key,
@@ -72,7 +71,8 @@ class RequestListPage extends StatelessWidget {
             itemCount: docs.length,
             itemBuilder: (context, index) {
               final data = docs[index].data() as Map<String, dynamic>;
-              return _buildRequestCard(data);
+              // PASSING docs[index].id TO THE CARD
+              return _buildRequestCard(data, docs[index].id);
             },
           );
         },
@@ -80,8 +80,9 @@ class RequestListPage extends StatelessWidget {
     );
   }
 
-  Widget _buildRequestCard(Map<String, dynamic> data) {
-    final status = data['status']?.toString().toUpperCase() ?? 'UNKNOWN';
+  Widget _buildRequestCard(Map<String, dynamic> data, String docId) {
+    // Convert status to lowercase to avoid case-mismatch issues
+    final rawStatus = data['status']?.toString().toLowerCase() ?? 'unknown';
     final wasteType = data['wasteType'] ?? 'Unknown';
     final quantity = data['quantity'] ?? 'N/A';
     final address = data['address'] ?? 'No address';
@@ -90,15 +91,13 @@ class RequestListPage extends StatelessWidget {
     String dateStr = 'Unknown Date';
     if (data['createdAt'] != null && data['createdAt'] is Timestamp) {
       final ts = data['createdAt'] as Timestamp;
-      dateStr = ts
-          .toDate()
-          .toString(); // simple format, e.g., 2026-01-30 04:57:43.000
+      dateStr = ts.toDate().toString(); 
     }
 
     Color statusColor = Colors.grey;
-    if (status == 'PENDING') statusColor = Colors.orange;
-    if (status == 'ACCEPTED') statusColor = Colors.blue;
-    if (status == 'COMPLETED') statusColor = Colors.green;
+    if (rawStatus == 'pending') statusColor = Colors.orange;
+    if (rawStatus == 'accepted' || rawStatus == 'picked_up') statusColor = Colors.blue;
+    if (rawStatus == 'completed') statusColor = Colors.green;
 
     return Card(
       elevation: 2,
@@ -125,11 +124,11 @@ class RequestListPage extends StatelessWidget {
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: statusColor.withValues(alpha: 0.1),
+                    color: statusColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    status,
+                    rawStatus.toUpperCase(),
                     style: TextStyle(
                       color: statusColor,
                       fontSize: 12,
@@ -167,6 +166,37 @@ class RequestListPage extends StatelessWidget {
               dateStr,
               style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
             ),
+
+            // --- ADDED WASTE PICKED UP BUTTON FOR CITIZEN ---
+            if (rawStatus == 'accepted')
+              Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      FirebaseFirestore.instance
+                          .collection('pickup_requests')
+                          .doc(docId)
+                          .update({
+                            'status': 'picked_up',
+                            'citizenConfirmed': true,
+                            'citizenConfirmedAt': FieldValue.serverTimestamp(),
+                          });
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.orange,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: const Text(
+                      "waste pickedup",
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+              ),
           ],
         ),
       ),

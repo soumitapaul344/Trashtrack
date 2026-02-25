@@ -14,6 +14,7 @@ class _RiderSignupPageState extends State<RiderSignupPage> {
   final nameController = TextEditingController();
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
+  final confirmPasswordController = TextEditingController();
   final contactController = TextEditingController();
   String selectedVehicleType = 'bike';
   final vehicleNumberController = TextEditingController();
@@ -35,12 +36,18 @@ class _RiderSignupPageState extends State<RiderSignupPage> {
     if (nameController.text.isEmpty ||
         emailController.text.isEmpty ||
         passwordController.text.isEmpty ||
+        confirmPasswordController.text.isEmpty ||
         contactController.text.isEmpty ||
         selectedVehicleType.isEmpty ||
         vehicleNumberController.text.isEmpty ||
         nidController.text.isEmpty ||
         drivingLicenseController.text.isEmpty) {
       showSnackBar("Please fill all mandatory fields for Rider");
+      return;
+    }
+
+    if (passwordController.text.trim() != confirmPasswordController.text.trim()) {
+      showSnackBar("Passwords do not match");
       return;
     }
 
@@ -153,6 +160,13 @@ class _RiderSignupPageState extends State<RiderSignupPage> {
               isPass: true,
             ),
             const SizedBox(height: 15),
+            _signupField(
+              "Confirm Password",
+              confirmPasswordController,
+              Icons.lock_outline,
+              isPass: true,
+            ),
+            const SizedBox(height: 15),
             _signupField("Contact Number", contactController, Icons.phone),
             const SizedBox(height: 25),
             const SizedBox(height: 5),
@@ -180,6 +194,19 @@ class _RiderSignupPageState extends State<RiderSignupPage> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    nameController.dispose();
+    emailController.dispose();
+    passwordController.dispose();
+    confirmPasswordController.dispose();
+    contactController.dispose();
+    vehicleNumberController.dispose();
+    nidController.dispose();
+    drivingLicenseController.dispose();
+    super.dispose();
   }
 
   Widget _signupField(

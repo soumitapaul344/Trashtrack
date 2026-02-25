@@ -73,10 +73,22 @@ class CitizenTrackingContent {
               }
 
               final data = riderSnapshot.data!.data() as Map<String, dynamic>;
-              final lat = (data['latitude'] as num?)?.toDouble();
-              final lng = (data['longitude'] as num?)?.toDouble();
+              final location = data['location'];
+              LatLng? position;
 
-              if (lat == null || lng == null) {
+              if (location is GeoPoint) {
+                position = LatLng(location.latitude, location.longitude);
+              } else if (location is Map<String, dynamic>) {
+                final latValue = location['latitude'] ?? location['lat'];
+                final lngValue = location['longitude'] ?? location['lng'];
+                final lat = (latValue as num?)?.toDouble();
+                final lng = (lngValue as num?)?.toDouble();
+                if (lat != null && lng != null) {
+                  position = LatLng(lat, lng);
+                }
+              }
+
+              if (position == null) {
                 return const Center(
                   child: Padding(
                     padding: EdgeInsets.all(40),
@@ -100,15 +112,18 @@ class CitizenTrackingContent {
                       border: Border.all(color: Colors.grey.shade200),
                     ),
                     child: GoogleMap(
+                      key: ValueKey(
+                        '${position.latitude},${position.longitude}',
+                      ),
                       initialCameraPosition: CameraPosition(
-                        target: LatLng(lat, lng),
+                        target: position,
                         zoom: 16,
                       ),
                       onMapCreated: (controller) {},
                       markers: {
                         Marker(
                           markerId: const MarkerId('rider'),
-                          position: LatLng(lat, lng),
+                          position: position,
                           infoWindow: const InfoWindow(title: 'Your Rider'),
                         ),
                       },
@@ -126,14 +141,16 @@ class CitizenTrackingContent {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Latitude: ${lat.toStringAsFixed(6)}',
+                          'Latitude: ${position.latitude.toStringAsFixed(6)}',
                           style: const TextStyle(fontSize: 12),
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          'Longitude: ${lng.toStringAsFixed(6)}',
+                          'Longitude: ${position.longitude.toStringAsFixed(6)}',
                           style: const TextStyle(fontSize: 12),
                         ),
+                        const SizedBox(height: 12),
+                        const SizedBox.shrink(),
                       ],
                     ),
                   ),

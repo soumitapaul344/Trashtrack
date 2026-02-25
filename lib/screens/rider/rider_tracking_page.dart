@@ -14,7 +14,7 @@ class RiderTrackingPage extends StatefulWidget {
 }
 
 class _RiderTrackingPageState extends State<RiderTrackingPage> {
-  late GoogleMapController mapController;
+  GoogleMapController? mapController;
   final Color primaryGreen = const Color(0xFF138D75);
 
   @override
@@ -257,7 +257,7 @@ class _RiderTrackingPageState extends State<RiderTrackingPage> {
 
   @override
   void dispose() {
-    mapController.dispose();
+    mapController?.dispose();
     super.dispose();
   }
 }

@@ -1,6 +1,13 @@
 part of 'rider_home.dart';
 
 extension RiderHistorySection on _RiderHomeState {
+  String _validPhone(String? value) {
+    if (value == null || value.trim().isEmpty) return '';
+    final cleaned = value.replaceAll(RegExp(r'[\s\-()]'), '');
+    final regex = RegExp(r'^\+?\d{10,15}$');
+    return regex.hasMatch(cleaned) ? cleaned : '';
+  }
+
   // ================= PICKUP HISTORY =================
   Widget _buildHistory() {
     return SingleChildScrollView(
@@ -51,9 +58,7 @@ extension RiderHistorySection on _RiderHomeState {
     final isSelected = _historyTabIndex == index;
 
     return GestureDetector(
-      onTap: () {
-        _historyTabIndex = index;
-      },
+      onTap: () => _changeHistoryTab(index),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
@@ -74,7 +79,6 @@ extension RiderHistorySection on _RiderHomeState {
 
   Widget _buildHistoryList() {
     final user = FirebaseAuth.instance.currentUser;
-    String filterStatus = _historyTabIndex == 0 ? 'accepted' : 'completed';
 
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
@@ -86,14 +90,21 @@ extension RiderHistorySection on _RiderHomeState {
           return const Center(child: CircularProgressIndicator());
         }
 
-        // Filter by status
+        // FILTER LOGIC
         final docs = snapshot.data!.docs.where((doc) {
           final data = doc.data() as Map<String, dynamic>;
-          String status = data['status'] ?? 'pending';
-          return status == filterStatus;
+          String status = data['status']?.toString().toLowerCase() ?? 'pending';
+          
+          if (_historyTabIndex == 0) {
+            // "Accepted" tab should show both accepted and picked_up
+            return status == 'accepted' || status == 'picked_up';
+          } else {
+            // "Completed" tab
+            return status == 'completed';
+          }
         }).toList();
 
-        String emptyMsg = filterStatus == 'completed'
+        String emptyMsg = _historyTabIndex == 1
             ? "No completed pickups"
             : "No accepted pickups";
 
@@ -111,7 +122,6 @@ extension RiderHistorySection on _RiderHomeState {
           itemBuilder: (context, index) {
             final doc = docs[index];
             final data = doc.data() as Map<String, dynamic>;
-
             return _buildHistoryCard(data, doc.id);
           },
         );
@@ -123,7 +133,11 @@ extension RiderHistorySection on _RiderHomeState {
     String wasteType = req['wasteType'] ?? "Unknown";
     String address = req['address'] ?? "";
     String weight = req['quantity'] ?? "0";
-    String status = req['status'] ?? 'accepted';
+    final validPhone = _validPhone(req['phone']?.toString());
+    String status = req['status']?.toString().toLowerCase() ?? 'accepted';
+
+    // Condition to enable/disable button
+    bool isPickedUp = status == 'picked_up';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -152,7 +166,12 @@ extension RiderHistorySection on _RiderHomeState {
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
-                      "REQ-2455",
+                      (() {
+                        final code = docId.length >= 6
+                            ? docId.substring(0, 6).toUpperCase()
+                            : docId.toUpperCase();
+                        return 'REQ-$code';
+                      })(),
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.bold,
@@ -169,7 +188,7 @@ extension RiderHistorySection on _RiderHomeState {
               ),
               if (status == 'completed')
                 const Text(
-                  "₹50",
+                  "৳50",
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -203,25 +222,61 @@ extension RiderHistorySection on _RiderHomeState {
               ),
             ],
           ),
-          if (status == 'accepted')
+          if (validPhone.isNotEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 10),
               child: SizedBox(
                 width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () => _markAsDone(docId),
+                child: ElevatedButton.icon(
+                  onPressed: () async {
+                    final uri = Uri.parse('tel:$validPhone');
+                    try {
+                      if (await canLaunchUrl(uri)) {
+                        await launchUrl(uri);
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Cannot place call')),
+                        );
+                      }
+                    } catch (_) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Unable to call')),
+                      );
+                    }
+                  },
+                  icon: const Icon(Icons.call),
+                  label: Text(validPhone),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
+                    backgroundColor: Colors.green,
                     padding: const EdgeInsets.symmetric(vertical: 8),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(6),
                     ),
                   ),
-                  child: const Text(
-                    "Mark as Done",
+                ),
+              ),
+            ),
+
+          // BUTTON LOGIC: Changes text and color based on Citizen confirmation
+          if (status != 'completed')
+            Padding(
+              padding: const EdgeInsets.only(top: 10),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: isPickedUp ? () => _markAsDone(docId) : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: isPickedUp ? Colors.blue : Colors.grey.shade300,
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                  ),
+                  child: Text(
+                    isPickedUp ? "Mark as Done" : "Waiting for Citizen Confirmation",
                     style: TextStyle(
                       fontSize: 12,
-                      color: Colors.white,
+                      color: isPickedUp ? Colors.white : Colors.grey.shade600,
                       fontWeight: FontWeight.bold,
                     ),
                   ),

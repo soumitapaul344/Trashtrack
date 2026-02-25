@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class RequestListPage extends StatelessWidget {
   final String title;
@@ -71,8 +72,9 @@ class RequestListPage extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             itemCount: docs.length,
             itemBuilder: (context, index) {
-              final data = docs[index].data() as Map<String, dynamic>;
-              return _buildRequestCard(data);
+              final doc = docs[index];
+              final data = doc.data() as Map<String, dynamic>;
+              return _buildRequestCard(data, doc.id, context);
             },
           );
         },
@@ -80,7 +82,7 @@ class RequestListPage extends StatelessWidget {
     );
   }
 
-  Widget _buildRequestCard(Map<String, dynamic> data) {
+  Widget _buildRequestCard(Map<String, dynamic> data, String docId, BuildContext context) {
     final status = data['status']?.toString().toUpperCase() ?? 'UNKNOWN';
     final wasteType = data['wasteType'] ?? 'Unknown';
     final quantity = data['quantity'] ?? 'N/A';
@@ -166,6 +168,49 @@ class RequestListPage extends StatelessWidget {
             Text(
               dateStr,
               style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+            ),
+            const SizedBox(height: 12),
+            // Call button and citizen confirm (Waste Picked Up)
+            Row(
+              children: [
+                if ((data['status']?.toString().toLowerCase() == 'accepted' || data['status']?.toString().toLowerCase() == 'pending') && (data['riderPhone'] != null))
+                  ElevatedButton.icon(
+                    onPressed: () async {
+                      final phone = (data['riderPhone'] ?? '').toString();
+                      if (phone.trim().isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('No phone available')));
+                        return;
+                      }
+                      final uri = Uri.parse('tel:$phone');
+                      try {
+                        await launchUrl(uri);
+                      } catch (e) {
+                        if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Unable to place call')));
+                      }
+                    },
+                    icon: const Icon(Icons.call),
+                    label: Text((data['riderPhone'] ?? 'Call Rider').toString()),
+                  ),
+                const SizedBox(width: 8),
+                // Waste Picked Up button: show for accepted requests; enable only after rider marks pickedUp
+                if ((data['status']?.toString().toLowerCase() == 'accepted'))
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: (data['pickedUp'] as bool? ?? false) && !(data['citizenConfirmed'] as bool? ?? false)
+                          ? () async {
+                              await FirebaseFirestore.instance.collection('pickup_requests').doc(docId).update({
+                                'citizenConfirmed': true,
+                                'citizenConfirmedAt': FieldValue.serverTimestamp(),
+                              });
+                              if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Waste pickup confirmed.')));
+                            }
+                          : null,
+                      child: Text((data['citizenConfirmed'] as bool? ?? false)
+                          ? 'Confirmed'
+                          : ((data['pickedUp'] as bool? ?? false) ? 'Waste Picked Up' : 'Waiting for pickup')),
+                    ),
+                  ),
+              ],
             ),
           ],
         ),

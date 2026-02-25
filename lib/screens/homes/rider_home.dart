@@ -197,9 +197,27 @@ class _RiderHomeState extends State<RiderHome> {
                   pickups++;
                 }
 
-                // Count earnings if completed today
-                if (createdDay == today && status == 'completed') {
-                  earnings += 50;
+                // Count earnings if completed today — use completedAt if available
+                if (status == 'completed') {
+                  DateTime? completedDateTime;
+                  if (data['completedAt'] != null) {
+                    try {
+                      completedDateTime = (data['completedAt'] as Timestamp).toDate();
+                    } catch (e) {
+                      completedDateTime = null;
+                    }
+                  }
+
+                  final usedDate = completedDateTime ?? createdDate;
+                  final usedDay = DateTime(
+                    usedDate.year,
+                    usedDate.month,
+                    usedDate.day,
+                  );
+
+                  if (usedDay == today) {
+                    earnings += 50;
+                  }
                 }
               } catch (e) {
                 // Skip if date parsing fails
@@ -370,7 +388,12 @@ class _RiderHomeState extends State<RiderHome> {
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
-                  "REQ-2456",
+                  (() {
+                    final code = docId.length >= 6
+                        ? docId.substring(0, 6).toUpperCase()
+                        : docId.toUpperCase();
+                    return 'REQ-$code';
+                  })(),
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
@@ -513,32 +536,63 @@ class _RiderHomeState extends State<RiderHome> {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
-    await FirebaseFirestore.instance
-        .collection('pickup_requests')
-        .doc(docId)
-        .update({'status': 'accepted', 'riderId': user.uid});
-
-    if (mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Pickup request accepted!")));
+    final docRef = FirebaseFirestore.instance.collection('pickup_requests').doc(docId);
+    final docSnap = await docRef.get();
+    String? citizenId;
+    if (docSnap.exists) {
+      final data = docSnap.data() as Map<String, dynamic>?;
+      citizenId = data?['userId'] as String?;
     }
+
+    String citizenPhone = '';
+    if (citizenId != null && citizenId.isNotEmpty) {
+      final citizenDoc = await FirebaseFirestore.instance.collection('users').doc(citizenId).get();
+      if (citizenDoc.exists) {
+        final d = citizenDoc.data() as Map<String, dynamic>?;
+        citizenPhone = d?['phone'] ?? '';
+      }
+    }
+
+    // Fetch rider info to store for citizen view
+    String riderName = user.displayName ?? '';
+    String riderPhone = '';
+    final riderUserDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+    if (riderUserDoc.exists) {
+      final r = riderUserDoc.data() as Map<String, dynamic>?;
+      riderName = r?['name'] ?? riderName;
+      riderPhone = r?['phone'] ?? '';
+    }
+
+    await docRef.update({
+      'status': 'accepted',
+      'riderId': user.uid,
+      'citizenPhone': citizenPhone,
+      'acceptedAt': FieldValue.serverTimestamp(),
+      'citizenConfirmed': false,
+      'riderName': riderName,
+      'riderPhone': riderPhone,
+    });
+
+    if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Pickup request accepted!")));
   }
 
   Future<void> _markAsDone(String docId) async {
-    await FirebaseFirestore.instance
-        .collection('pickup_requests')
-        .doc(docId)
-        .update({
-          'status': 'completed',
-          'completedAt': FieldValue.serverTimestamp(),
-        });
-
-    if (mounted) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Marked as completed!")));
+    final docRef = FirebaseFirestore.instance.collection('pickup_requests').doc(docId);
+    final snap = await docRef.get();
+    if (!snap.exists) return;
+    final data = snap.data() as Map<String, dynamic>;
+    final citizenConfirmed = data['citizenConfirmed'] as bool? ?? false;
+    if (!citizenConfirmed) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Citizen must confirm before marking as done.")));
+      return;
     }
+
+    await docRef.update({
+      'status': 'completed',
+      'completedAt': FieldValue.serverTimestamp(),
+    });
+
+    if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Marked as completed!")));
   }
 
   // Dial helper: open phone dialer when rider taps the provided number
@@ -724,7 +778,12 @@ class _RiderHomeState extends State<RiderHome> {
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
-                      "REQ-2455",
+                      (() {
+                        final code = docId.length >= 6
+                            ? docId.substring(0, 6).toUpperCase()
+                            : docId.toUpperCase();
+                        return 'REQ-$code';
+                      })(),
                       style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.bold,
@@ -780,62 +839,36 @@ class _RiderHomeState extends State<RiderHome> {
               padding: const EdgeInsets.only(top: 10),
               child: Row(
                 children: [
-                  // Display citizen phone number provided in the pickup request
+                  // Call button for citizen phone
                   Expanded(
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 10,
-                        horizontal: 12,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.green,
-                        borderRadius: BorderRadius.circular(6),
-                      ),
-                      child: InkWell(
-                        onTap: phoneText == 'Not available'
-                            ? null
-                            : () => _dialPhone(phoneText),
-                        borderRadius: BorderRadius.circular(6),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(
-                              Icons.phone,
-                              size: 14,
-                              color: Colors.white,
-                            ),
-                            const SizedBox(width: 6),
-                            Flexible(
-                              child: Text(
-                                phoneText,
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
+                    child: ElevatedButton.icon(
+                      onPressed: (phoneText == 'Not available' || phoneText.trim().isEmpty)
+                          ? null
+                          : () => _dialPhone(phoneText),
+                      icon: const Icon(Icons.call, size: 16),
+                      label: Text(phoneText == 'Not available' ? 'No Phone' : phoneText, overflow: TextOverflow.ellipsis),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
                       ),
                     ),
                   ),
                   const SizedBox(width: 8),
+                  // Mark as Done button - enabled only after citizen confirms
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () => _markAsDone(docId),
+                      onPressed: (req['citizenConfirmed'] as bool? ?? false) ? () => _markAsDone(docId) : null,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
+                        backgroundColor: (req['citizenConfirmed'] as bool? ?? false) ? Colors.blue : Colors.blue.shade200,
                         padding: const EdgeInsets.symmetric(vertical: 8),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(6),
                         ),
                       ),
-                      child: const Text(
-                        "Mark as Done",
-                        style: TextStyle(
+                      child: Text(
+                        (req['citizenConfirmed'] as bool? ?? false) ? 'Mark as Done' : 'Awaiting Confirm',
+                        style: const TextStyle(
                           fontSize: 12,
                           color: Colors.white,
                           fontWeight: FontWeight.bold,

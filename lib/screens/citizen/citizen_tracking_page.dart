@@ -14,8 +14,41 @@ class CitizenTrackingPage extends StatefulWidget {
 }
 
 class _CitizenTrackingPageState extends State<CitizenTrackingPage> {
-  late GoogleMapController mapController;
+  GoogleMapController? _mapController;
+  LatLng? _lastCameraTarget;
   final Color primaryGreen = const Color(0xFF138D75);
+
+  LatLng? _extractLocation(Map<String, dynamic> data) {
+    final location = data['location'];
+
+    if (location is GeoPoint) {
+      return LatLng(location.latitude, location.longitude);
+    }
+
+    if (location is Map<String, dynamic>) {
+      final latValue = location['latitude'] ?? location['lat'];
+      final lngValue = location['longitude'] ?? location['lng'];
+      final lat = (latValue as num?)?.toDouble();
+      final lng = (lngValue as num?)?.toDouble();
+      if (lat != null && lng != null) {
+        return LatLng(lat, lng);
+      }
+    }
+
+    return null;
+  }
+
+  void _followRider(LatLng target) {
+    if (_mapController == null) return;
+    if (_lastCameraTarget != null &&
+        _lastCameraTarget!.latitude == target.latitude &&
+        _lastCameraTarget!.longitude == target.longitude) {
+      return;
+    }
+
+    _lastCameraTarget = target;
+    _mapController!.animateCamera(CameraUpdate.newLatLng(target));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -90,14 +123,13 @@ class _CitizenTrackingPageState extends State<CitizenTrackingPage> {
           );
         }
 
-        // Extract latitude and longitude from Firestore document
+        // Extract rider location from Firestore document field: location
         final data = snapshot.data!.data() as Map<String, dynamic>;
-        final lat = (data['latitude'] as num?)?.toDouble();
-        final lng = (data['longitude'] as num?)?.toDouble();
+        final position = _extractLocation(data);
         final lastUpdated = data['lastUpdated'] as Timestamp?;
 
         // Validate coordinates
-        if (lat == null || lng == null) {
+        if (position == null) {
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -114,23 +146,30 @@ class _CitizenTrackingPageState extends State<CitizenTrackingPage> {
           );
         }
 
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            _followRider(position);
+          }
+        });
+
         // Render map with rider marker
         return Stack(
           children: [
             // Google Map showing rider's location
             GoogleMap(
               initialCameraPosition: CameraPosition(
-                target: LatLng(lat, lng),
+                target: position,
                 zoom: 16,
               ),
               onMapCreated: (controller) {
-                mapController = controller;
+                _mapController = controller;
+                _followRider(position);
               },
               markers: {
                 // Rider location marker
                 Marker(
                   markerId: const MarkerId('rider_location'),
-                  position: LatLng(lat, lng),
+                  position: position,
                   infoWindow: const InfoWindow(
                     title: 'Your Rider',
                     snippet: 'Current location',
@@ -186,7 +225,7 @@ class _CitizenTrackingPageState extends State<CitizenTrackingPage> {
                           ),
                         ),
                         Text(
-                          lat.toStringAsFixed(6),
+                          position.latitude.toStringAsFixed(6),
                           style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
@@ -206,7 +245,7 @@ class _CitizenTrackingPageState extends State<CitizenTrackingPage> {
                           ),
                         ),
                         Text(
-                          lng.toStringAsFixed(6),
+                          position.longitude.toStringAsFixed(6),
                           style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
@@ -257,7 +296,7 @@ class _CitizenTrackingPageState extends State<CitizenTrackingPage> {
 
   @override
   void dispose() {
-    mapController.dispose();
+    _mapController?.dispose();
     super.dispose();
   }
 }

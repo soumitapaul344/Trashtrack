@@ -216,9 +216,13 @@ class _PickupRequestPageState extends State<PickupRequestPage> {
                   "Enter contact phone (required)",
                   Icons.phone,
                 ),
-                validator: (val) => val == null || val.trim().isEmpty
-                    ? 'Please enter phone number'
-                    : null,
+                validator: (val) {
+                  if (val == null || val.trim().isEmpty) return 'Please enter phone number';
+                  final cleaned = val.replaceAll(RegExp(r'[\s\-()]'), '');
+                    final regex = RegExp(r'^\+?\d{10,15}$');
+                  if (!regex.hasMatch(cleaned)) return 'Enter a valid phone number';
+                  return null;
+                },
               ),
               const SizedBox(height: 20),
 

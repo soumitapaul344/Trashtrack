@@ -106,7 +106,7 @@ extension RiderEarningsSection on _RiderHomeState {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          "₹$todayEarnings",
+                          "৳$todayEarnings",
                           style: const TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
@@ -135,7 +135,7 @@ extension RiderEarningsSection on _RiderHomeState {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          "₹$weekEarnings",
+                          "৳$weekEarnings",
                           style: const TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
@@ -179,7 +179,7 @@ extension RiderEarningsSection on _RiderHomeState {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    "₹$monthEarnings",
+                    "৳$monthEarnings",
                     style: const TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
@@ -256,7 +256,7 @@ extension RiderEarningsSection on _RiderHomeState {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text(
-                        "₹50",
+                        "৳50",
                         style: TextStyle(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,

@@ -227,6 +227,58 @@ class ProfilePage extends StatelessWidget {
                         ),
                       ),
                     ),
+                    const SizedBox(height: 8),
+                    // Edit button
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton.icon(
+                        onPressed: () async {
+                          // Open edit dialog
+                          final doc = await FirebaseFirestore.instance
+                              .collection('users')
+                              .doc(user?.uid)
+                              .get();
+                          final data = doc.exists ? (doc.data() as Map<String, dynamic>?) : null;
+                          final name = data?['name'] ?? '';
+                          final phone = data?['phone'] ?? '';
+
+                          final nameController = TextEditingController(text: name);
+                          final phoneController = TextEditingController(text: phone);
+
+                          if (!context.mounted) return;
+                          showDialog(
+                            context: context,
+                            builder: (context) {
+                              return AlertDialog(
+                                title: const Text('Edit Profile'),
+                                content: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    TextField(controller: nameController, decoration: const InputDecoration(labelText: 'Name')),
+                                    TextField(controller: phoneController, decoration: const InputDecoration(labelText: 'Phone')),
+                                  ],
+                                ),
+                                actions: [
+                                  TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+                                  ElevatedButton(
+                                    onPressed: () async {
+                                      await FirebaseFirestore.instance.collection('users').doc(user?.uid).update({
+                                        'name': nameController.text.trim(),
+                                        'phone': phoneController.text.trim(),
+                                      });
+                                      if (context.mounted) Navigator.pop(context);
+                                    },
+                                    child: const Text('Save'),
+                                  ),
+                                ],
+                              );
+                            },
+                          );
+                        },
+                        icon: const Icon(Icons.edit),
+                        label: const Text('Edit'),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -275,6 +327,46 @@ class ProfilePage extends StatelessWidget {
               Text("Home Address: $homeAddress"),
               const SizedBox(height: 6),
               Text("Area / Zone: $areaZone"),
+              const SizedBox(height: 8),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
+                  onPressed: () async {
+                    final doc = await FirebaseFirestore.instance
+                        .collection('users')
+                        .doc(user?.uid)
+                        .get();
+                    final data = doc.exists ? (doc.data() as Map<String, dynamic>?) : null;
+                    final addr = data?['homeAddress'] ?? '';
+                    final addrController = TextEditingController(text: addr);
+                    if (!context.mounted) return;
+                    showDialog(
+                      context: context,
+                      builder: (context) {
+                        return AlertDialog(
+                          title: const Text('Edit Address'),
+                          content: TextField(controller: addrController, maxLines: 3),
+                          actions: [
+                            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+                            ElevatedButton(
+                              onPressed: () async {
+                                await FirebaseFirestore.instance
+                                    .collection('users')
+                                    .doc(user?.uid)
+                                    .update({'homeAddress': addrController.text.trim()});
+                                if (context.mounted) Navigator.pop(context);
+                              },
+                              child: const Text('Save'),
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                  },
+                  icon: const Icon(Icons.edit_location),
+                  label: const Text('Edit'),
+                ),
+              ),
             ],
           ),
         );

@@ -54,6 +54,10 @@ class RiderLocationService {
       );
 
       await _firestore.collection('riders').doc(riderId).set({
+        'location': {
+          'latitude': position.latitude,
+          'longitude': position.longitude,
+        },
         'latitude': position.latitude,
         'longitude': position.longitude,
         'lastUpdated': FieldValue.serverTimestamp(),

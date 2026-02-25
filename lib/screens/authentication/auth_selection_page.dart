@@ -5,7 +5,6 @@ import 'admin_login_page.dart';
 import 'verify_email_page.dart';
 import 'package:trashtrack/screens/citizen/citizen_home.dart';
 import 'package:trashtrack/screens/rider/rider_home.dart';
-import 'package:trashtrack/screens/homes/cleaner_home.dart';
 import 'package:trashtrack/screens/homes/admin_home.dart';
 import 'package:trashtrack/services/auth_service.dart';
 
@@ -77,8 +76,6 @@ class _AuthSelectionPageState extends State<AuthSelectionPage> {
         nextHome = const CitizenHomePage();
       } else if (role == "rider") {
         nextHome = const RiderHome();
-      } else if (role == "cleaner") {
-        nextHome = const CleanerHome();
       } else if (role == "admin") {
         nextHome = const AdminHome();
       } else {

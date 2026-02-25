@@ -14,6 +14,7 @@ class _CitizenSignupPageState extends State<CitizenSignupPage> {
   final nameController = TextEditingController();
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
+  final confirmPasswordController = TextEditingController();
   final houseController = TextEditingController();
   final roadController = TextEditingController();
   final blockController = TextEditingController();
@@ -34,10 +35,16 @@ class _CitizenSignupPageState extends State<CitizenSignupPage> {
     if (nameController.text.isEmpty ||
         emailController.text.isEmpty ||
         passwordController.text.isEmpty ||
+        confirmPasswordController.text.isEmpty ||
         houseController.text.isEmpty ||
         blockController.text.isEmpty ||
         contactController.text.isEmpty) {
       showSnackBar("Please fill all mandatory fields");
+      return;
+    }
+
+    if (passwordController.text.trim() != confirmPasswordController.text.trim()) {
+      showSnackBar("Passwords do not match");
       return;
     }
 
@@ -94,6 +101,13 @@ class _CitizenSignupPageState extends State<CitizenSignupPage> {
               Icons.lock_outline,
               isPass: true,
             ),
+            const SizedBox(height: 15),
+            _signupField(
+              "Confirm Password",
+              confirmPasswordController,
+              Icons.lock_outline,
+              isPass: true,
+            ),
             const SizedBox(height: 25),
             _signupField("House No.", houseController, Icons.home_outlined),
             const SizedBox(height: 15),
@@ -126,6 +140,19 @@ class _CitizenSignupPageState extends State<CitizenSignupPage> {
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    nameController.dispose();
+    emailController.dispose();
+    passwordController.dispose();
+    confirmPasswordController.dispose();
+    houseController.dispose();
+    roadController.dispose();
+    blockController.dispose();
+    contactController.dispose();
+    super.dispose();
   }
 
   Widget _signupField(

@@ -8,9 +8,7 @@ extension RiderNavSection on _RiderHomeState {
       selectedItemColor: primaryGreen,
       unselectedItemColor: Colors.grey.shade400,
       type: BottomNavigationBarType.fixed,
-      onTap: (index) {
-        _currentIndex = index;
-      },
+      onTap: (index) => _changeIndex(index),
       items: const [
         BottomNavigationBarItem(
           icon: Icon(Icons.home_outlined),
