@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.trashtrack"
+    namespace = "com.example.trashtrack"  
     compileSdk = 35
     ndkVersion = "27.0.12077973"
 
@@ -24,8 +24,8 @@ android {
         minSdkVersion(23)
         targetSdkVersion(34)
 
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 3
+        versionName = "1.2"
     }
 
     buildTypes {

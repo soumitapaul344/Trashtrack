@@ -188,10 +188,27 @@ class _PickupRequestPageState extends State<PickupRequestPage> {
                   Icons.phone,
                 ),
                 validator: (val) {
-                  if (val == null || val.trim().isEmpty) return 'Please enter phone number';
-                  final cleaned = val.replaceAll(RegExp(r'[\s\-()]'), '');
-                  final regex = RegExp(r'^\+?\d{10,15}$');
-                  if (!regex.hasMatch(cleaned)) return 'Enter a valid phone number';
+                  if (val == null || val.trim().isEmpty) {
+                    return 'Please enter phone number';
+                  }
+                  final cleaned = val.replaceAll(RegExp(r'\D'), '');
+                  if (cleaned.length != 11) {
+                    return 'Please enter a valid BD number (013-019)';
+                  }
+                  final validPrefixes = [
+                    '013',
+                    '014',
+                    '015',
+                    '016',
+                    '017',
+                    '018',
+                    '019',
+                  ];
+                  if (!validPrefixes.any(
+                    (prefix) => cleaned.startsWith(prefix),
+                  )) {
+                    return 'Please enter a valid BD number (013-019)';
+                  }
                   return null;
                 },
               ),

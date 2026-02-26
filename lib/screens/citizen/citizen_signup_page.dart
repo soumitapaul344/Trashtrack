@@ -31,6 +31,20 @@ class _CitizenSignupPageState extends State<CitizenSignupPage> {
     );
   }
 
+  bool _isValidBDPhoneNumber(String phoneNumber) {
+    // Remove all non-digit characters
+    final cleaned = phoneNumber.replaceAll(RegExp(r'\D'), '');
+
+    // Check if total digits is exactly 11
+    if (cleaned.length != 11) {
+      return false;
+    }
+
+    // Check if it starts with valid BD prefixes (013-019)
+    final validPrefixes = ['013', '014', '015', '016', '017', '018', '019'];
+    return validPrefixes.any((prefix) => cleaned.startsWith(prefix));
+  }
+
   Future<void> register() async {
     if (nameController.text.isEmpty ||
         emailController.text.isEmpty ||
@@ -43,8 +57,15 @@ class _CitizenSignupPageState extends State<CitizenSignupPage> {
       return;
     }
 
-    if (passwordController.text.trim() != confirmPasswordController.text.trim()) {
+    if (passwordController.text.trim() !=
+        confirmPasswordController.text.trim()) {
       showSnackBar("Passwords do not match");
+      return;
+    }
+
+    // Validate Bangladeshi phone number
+    if (!_isValidBDPhoneNumber(contactController.text.trim())) {
+      showSnackBar("Please enter a valid BD number (013-019)");
       return;
     }
 
@@ -111,7 +132,11 @@ class _CitizenSignupPageState extends State<CitizenSignupPage> {
             const SizedBox(height: 25),
             _signupField("House No.", houseController, Icons.home_outlined),
             const SizedBox(height: 15),
-            _signupField("Road (Optional)", roadController, Icons.add_road_outlined),
+            _signupField(
+              "Road (Optional)",
+              roadController,
+              Icons.add_road_outlined,
+            ),
             const SizedBox(height: 15),
             _signupField("Block / Sector", blockController, Icons.grid_view),
             const SizedBox(height: 15),

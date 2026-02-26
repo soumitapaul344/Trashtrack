@@ -32,6 +32,20 @@ class _RiderSignupPageState extends State<RiderSignupPage> {
     );
   }
 
+  bool _isValidBDPhoneNumber(String phoneNumber) {
+    // Remove all non-digit characters
+    final cleaned = phoneNumber.replaceAll(RegExp(r'\D'), '');
+
+    // Check if total digits is exactly 11
+    if (cleaned.length != 11) {
+      return false;
+    }
+
+    // Check if it starts with valid BD prefixes (013-019)
+    final validPrefixes = ['013', '014', '015', '016', '017', '018', '019'];
+    return validPrefixes.any((prefix) => cleaned.startsWith(prefix));
+  }
+
   Future<void> register() async {
     if (nameController.text.isEmpty ||
         emailController.text.isEmpty ||
@@ -46,8 +60,15 @@ class _RiderSignupPageState extends State<RiderSignupPage> {
       return;
     }
 
-    if (passwordController.text.trim() != confirmPasswordController.text.trim()) {
+    if (passwordController.text.trim() !=
+        confirmPasswordController.text.trim()) {
       showSnackBar("Passwords do not match");
+      return;
+    }
+
+    // Validate Bangladeshi phone number
+    if (!_isValidBDPhoneNumber(contactController.text.trim())) {
+      showSnackBar("Please enter a valid BD number (013-019)");
       return;
     }
 
